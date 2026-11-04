@@ -83,14 +83,20 @@
                 </svg>
             </div>
             <div>
-                <h1 class="font-extrabold text-base sm:text-lg tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-indigo-200 via-purple-200 to-pink-200">
-                    卒業研究展示：画音共鳴 <span class="text-xs font-normal text-slate-400 hidden sm:inline">| Sound-Canvas Resonance</span>
+                <h1 class="font-extrabold text-base sm:text-lg tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-cyan-200 via-teal-200 to-indigo-200">
+                    卒業研究展示：画音共鳴 <span class="text-xs font-normal text-slate-400 hidden sm:inline">| Sound-Canvas Aquarium</span>
                 </h1>
-                <p class="text-[10px] text-slate-400 hidden sm:block">描いた絵同士が触れ合い、響き合うインタラクティブ・シンフォニー</p>
+                <p class="text-[10px] text-slate-400 hidden sm:block">描いた生き物と泡が水槽内で響き合うインタラクティブ・アクアリウム</p>
             </div>
         </div>
 
         <div class="flex items-center space-x-2 sm:space-x-3">
+            <!-- Manual Bubble Spawn Button -->
+            <button id="spawnBubbleBtn" class="px-3 py-1.5 rounded-lg text-xs font-medium glass-button text-cyan-300 border-cyan-500/30 flex items-center space-x-1.5" title="泡を1つ生成">
+                <span>🫧</span>
+                <span class="hidden sm:inline">泡を発生</span>
+            </button>
+
             <!-- Exhibition Wall Toggle -->
             <button id="toggleExhibitionBtn" class="px-3 py-1.5 rounded-lg text-xs font-medium glass-button text-purple-300 border-purple-500/30 flex items-center space-x-1.5" title="展示モード (大画面プロジェクター向け)">
                 <span>📺</span>
@@ -121,17 +127,21 @@
             <!-- Floating Overlay Status Badge -->
             <div class="absolute top-4 left-4 pointer-events-none flex flex-col gap-1.5 text-xs text-slate-300 glass-panel p-3 rounded-2xl border border-white/10 shadow-xl">
                 <div class="flex items-center justify-between gap-4">
-                    <span class="text-slate-400">浮遊オブジェクト:</span>
-                    <span id="entityCountText" class="font-bold text-indigo-300">0</span>
+                    <span class="text-slate-400">水槽内の生き物:</span>
+                    <span id="entityCountText" class="font-bold text-cyan-300">0</span>
+                </div>
+                <div class="flex items-center justify-between gap-4">
+                    <span class="text-slate-400">水槽の広さ (Zoom):</span>
+                    <span id="zoomLevelText" class="font-bold text-teal-300">100% (1.0x)</span>
                 </div>
                 <div class="flex items-center justify-between gap-4">
                     <span class="text-slate-400">音響スケール:</span>
                     <span id="scaleNameText" class="font-bold text-purple-300">Pentatonic Major</span>
                 </div>
                 <div class="flex items-center justify-between gap-4">
-                    <span class="text-slate-400">共鳴エネルギー:</span>
+                    <span class="text-slate-400">水槽エネルギー:</span>
                     <div class="w-20 bg-slate-800 h-2 rounded-full overflow-hidden border border-white/10">
-                        <div id="energyBar" class="bg-gradient-to-r from-indigo-500 to-pink-500 h-full w-0 transition-all duration-300"></div>
+                        <div id="energyBar" class="bg-gradient-to-r from-cyan-500 via-teal-400 to-indigo-500 h-full w-0 transition-all duration-300"></div>
                     </div>
                 </div>
             </div>
@@ -144,8 +154,8 @@
 
             <!-- Exhibition Banner Badge -->
             <div id="exhibitionBadge" class="hidden absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none glass-panel px-6 py-2.5 rounded-full border border-purple-500/30 text-xs font-medium text-slate-200 shadow-2xl flex items-center space-x-3">
-                <span class="w-2 h-2 rounded-full bg-pink-400 animate-ping"></span>
-                <span>タブレットで絵を描くと、画面上で色と形がぶつかり合って音楽を創り出します</span>
+                <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+                <span>タブレットで生き物を描くと水槽が拡張し、泡や壁と触れ合ってアンビエント音響を奏でます</span>
             </div>
 
             <!-- Start Audio Gesture Overlay -->
@@ -473,6 +483,42 @@
                 osc2.stop(now + 0.4);
             }
 
+            /**
+             * BUBBLE POP WATER SYNTH SOUND EFFECT
+             * Synthesizes a wet squelch/bubble popping sound on demand
+             */
+            playBubblePopSound(radiusNormalized = 0.5) {
+                if (!this.isInitialized || this.ctx.state !== 'running') return;
+
+                const now = this.ctx.currentTime;
+
+                // Frequency pitch drops as bubble size increases
+                const startFreq = 400 + (1 - radiusNormalized) * 600;
+                const endFreq = startFreq + 250;
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                // Rapid upward pitch chirp simulating water tension burst
+                osc.frequency.setValueAtTime(startFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.04);
+
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.25, now + 0.005);
+                gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+
+                osc.connect(gain);
+                gain.connect(this.masterGain);
+
+                if (this.reverbEnabled) {
+                    gain.connect(this.reverbNode);
+                }
+
+                osc.start(now);
+                osc.stop(now + 0.08);
+            }
+
             setMasterVolume(val) {
                 if (this.masterGain && this.ctx) {
                     this.masterGain.gain.setValueAtTime(val, this.ctx.currentTime);
@@ -484,24 +530,143 @@
 
         /**
          * ==========================================
-         * 2. VISUAL PHYSICS & COLLISION ENGINE
+         * 2. VISUAL PHYSICS & AQUARIUM ENGINE
          * ==========================================
          */
         const worldCanvas = document.getElementById('worldCanvas');
         const worldCtx = worldCanvas.getContext('2d');
 
         let entities = [];
+        let bubbles = [];
         let ripples = [];
         let sparkParticles = [];
         let globalEnergy = 0;
+
+        // Base world size and dynamic camera zoom scaling
+        let baseWorldWidth = 1000;
+        let baseWorldHeight = 800;
+        let currentWorldWidth = 1000;
+        let currentWorldHeight = 800;
+        let cameraZoom = 1.0;
+        let targetCameraZoom = 1.0;
+
+        // Bubble Gimmick Timers
+        let lastBubbleSpawnTime = 0;
+        const BUBBLE_SPAWN_INTERVAL = 1400; // ms
 
         function resizeWorldCanvas() {
             const container = worldCanvas.parentElement;
             worldCanvas.width = container.clientWidth;
             worldCanvas.height = container.clientHeight;
+
+            baseWorldWidth = Math.max(1000, worldCanvas.width);
+            baseWorldHeight = Math.max(800, worldCanvas.height);
+            updateAquariumBounds();
         }
         window.addEventListener('resize', resizeWorldCanvas);
-        resizeWorldCanvas();
+
+        /**
+         * Dynamic Aquarium Expansion Logic
+         * Calculates target world size and camera zoom out factor based on entity count
+         */
+        function updateAquariumBounds() {
+            const count = entities.length;
+            // Expand world size by 18% for every 3 entities added
+            const expansionFactor = 1.0 + Math.floor(count / 3) * 0.18;
+
+            currentWorldWidth = baseWorldWidth * expansionFactor;
+            currentWorldHeight = baseWorldHeight * expansionFactor;
+
+            // Camera zoom pulls back to fit expanded aquarium in screen view
+            const zoomX = worldCanvas.width / currentWorldWidth;
+            const zoomY = worldCanvas.height / currentWorldHeight;
+            targetCameraZoom = Math.min(1.0, Math.min(zoomX, zoomY));
+
+            // UI Display Update
+            const zoomPercent = Math.round(targetCameraZoom * 100);
+            const zoomRatio = (1 / targetCameraZoom).toFixed(1);
+            document.getElementById('zoomLevelText').textContent = `${zoomPercent}% (${zoomRatio}x 拡大水槽)`;
+        }
+
+        /**
+         * Rising Water Bubble Class
+         */
+        class AquariumBubble {
+            constructor(customX, customY, customRadius) {
+                this.radius = customRadius || (10 + Math.random() * 18);
+                this.mass = this.radius * 0.3;
+
+                // Spawn near seabed if no coordinates provided
+                this.x = customX !== undefined ? customX : Math.random() * currentWorldWidth;
+                this.y = customY !== undefined ? customY : currentWorldHeight + this.radius;
+
+                // Buoyancy speed rising upward
+                this.vy = -(0.8 + Math.random() * 1.4);
+                this.vx = (Math.random() - 0.5) * 0.5;
+
+                this.wobblePhase = Math.random() * Math.PI * 2;
+                this.wobbleSpeed = 0.03 + Math.random() * 0.04;
+
+                this.life = 0;
+                this.maxLife = 400 + Math.random() * 400; // Max lifespan before bursting naturally
+                this.hitFlash = 0;
+            }
+
+            update() {
+                this.life++;
+                this.wobblePhase += this.wobbleSpeed;
+
+                // Sinusoidal sway
+                this.x += Math.sin(this.wobblePhase) * 0.4 + this.vx;
+                this.y += this.vy;
+
+                if (this.hitFlash > 0) this.hitFlash -= 0.08;
+
+                // Burst when reaching water surface or exceeding lifespan
+                if (this.y <= this.radius || this.life >= this.maxLife) {
+                    this.pop();
+                    return false;
+                }
+                return true;
+            }
+
+            pop() {
+                const normRadius = (this.radius - 10) / 18;
+                audio.playBubblePopSound(normRadius);
+                createSparks(this.x, this.y, '#38bdf8', 8);
+                createRipple(this.x, this.y, 'rgba(56, 189, 248, 0.6)');
+                boostEnergy(4);
+            }
+
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                // Water Bubble Gradient
+                const grad = ctx.createRadialGradient(-this.radius * 0.3, -this.radius * 0.3, this.radius * 0.1, 0, 0, this.radius);
+                grad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
+                grad.addColorStop(0.3, 'rgba(186, 230, 253, 0.35)');
+                grad.addColorStop(0.8, 'rgba(56, 189, 248, 0.25)');
+                grad.addColorStop(1, 'rgba(14, 165, 233, 0.6)');
+
+                ctx.fillStyle = grad;
+                ctx.strokeStyle = this.hitFlash > 0.1 ? '#ffffff' : 'rgba(224, 242, 254, 0.7)';
+                ctx.lineWidth = 1.5;
+
+                ctx.beginPath();
+                ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Bubble Highlight Glint
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+                ctx.beginPath();
+                ctx.arc(-this.radius * 0.35, -this.radius * 0.35, this.radius * 0.25, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
 
         /**
          * Floating Shape Entity Class
@@ -518,9 +683,9 @@
                 this.radius = Math.max(20, Math.min(65, (this.boundsWidth + this.boundsHeight) / 4));
                 this.mass = this.radius * 0.5; // Mass proportional to radius
 
-                // Initial Spawn Position
-                this.x = Math.random() * (worldCanvas.width - this.radius * 2) + this.radius;
-                this.y = Math.random() * (worldCanvas.height - this.radius * 2) + this.radius;
+                // Initial Spawn Position inside expanded world boundaries
+                this.x = Math.random() * (currentWorldWidth - this.radius * 2) + this.radius;
+                this.y = Math.random() * (currentWorldHeight - this.radius * 2) + this.radius;
                 
                 // Velocity
                 const speed = 1.5 + Math.random() * 1.8;
@@ -581,17 +746,17 @@
                 let collisionX = this.x;
                 let collisionY = this.y;
 
-                // Wall Collision Detection
+                // Dynamic Aquarium Boundaries Collision Detection
                 if (this.x - this.radius <= 0) {
                     this.x = this.radius;
                     this.vx *= -1;
                     collided = true;
                     collisionX = 0;
-                } else if (this.x + this.radius >= worldCanvas.width) {
-                    this.x = worldCanvas.width - this.radius;
+                } else if (this.x + this.radius >= currentWorldWidth) {
+                    this.x = currentWorldWidth - this.radius;
                     this.vx *= -1;
                     collided = true;
-                    collisionX = worldCanvas.width;
+                    collisionX = currentWorldWidth;
                 }
 
                 if (this.y - this.radius <= 0) {
@@ -599,11 +764,11 @@
                     this.vy *= -1;
                     collided = true;
                     collisionY = this.y;
-                } else if (this.y + this.radius >= worldCanvas.height) {
-                    this.y = worldCanvas.height - this.radius;
+                } else if (this.y + this.radius >= currentWorldHeight) {
+                    this.y = currentWorldHeight - this.radius;
                     this.vy *= -1;
                     collided = true;
-                    collisionY = worldCanvas.height;
+                    collisionY = currentWorldHeight;
                 }
 
                 if (collided) {
@@ -653,9 +818,10 @@
         }
 
         /**
-         * SHAPE-TO-SHAPE COLLISION DETECTION & IMPULSE RESOLUTION
+         * ALL PHYSICS COLLISIONS (Creature-to-Creature & Creature-to-Bubble)
          */
-        function handleShapeToShapeCollisions() {
+        function handleAquariumPhysicsCollisions() {
+            // 1. Creature <-> Creature Collisions
             for (let i = 0; i < entities.length; i++) {
                 for (let j = i + 1; j < entities.length; j++) {
                     const e1 = entities[i];
@@ -666,9 +832,7 @@
                     const distance = Math.hypot(dx, dy);
                     const minDistance = e1.radius + e2.radius;
 
-                    // Overlap detected!
                     if (distance < minDistance) {
-                        // Prevent overlap / Position separation
                         const overlap = 0.5 * (minDistance - distance);
                         const nx = dx / (distance || 1);
                         const ny = dy / (distance || 1);
@@ -678,7 +842,6 @@
                         e2.x += nx * overlap;
                         e2.y += ny * overlap;
 
-                        // Elastic Collision Velocity Response
                         const kx = e1.vx - e2.vx;
                         const ky = e1.vy - e2.vy;
                         const p = 2 * (nx * kx + ny * ky) / (e1.mass + e2.mass);
@@ -688,10 +851,8 @@
                         e2.vx += p * e1.mass * nx;
                         e2.vy += p * e1.mass * ny;
 
-                        // Relative impact speed
                         const impactSpeed = Math.hypot(kx, ky);
 
-                        // Trigger Collision Flash & Sound
                         e1.hitFlash = 1.0;
                         e2.hitFlash = 1.0;
 
@@ -706,6 +867,94 @@
                     }
                 }
             }
+
+            // 2. Creature <-> Bubble Collisions (Bubbles bounce or pop upon heavy impact)
+            for (let i = 0; i < entities.length; i++) {
+                for (let b = bubbles.length - 1; b >= 0; b--) {
+                    const e = entities[i];
+                    const bubble = bubbles[b];
+
+                    const dx = bubble.x - e.x;
+                    const dy = bubble.y - e.y;
+                    const dist = Math.hypot(dx, dy);
+                    const minDist = e.radius + bubble.radius;
+
+                    if (dist < minDist) {
+                        // High speed collision bursts bubble, gentle contact bounces
+                        const relVx = e.vx - bubble.vx;
+                        const relVy = e.vy - bubble.vy;
+                        const speed = Math.hypot(relVx, relVy);
+
+                        if (speed > 1.8 || Math.random() < 0.45) {
+                            bubble.pop();
+                            bubbles.splice(b, 1);
+                        } else {
+                            // Elastic rebound bounce
+                            const nx = dx / (dist || 1);
+                            const ny = dy / (dist || 1);
+                            bubble.vx += nx * 1.5;
+                            bubble.vy += ny * 1.5;
+                            bubble.hitFlash = 1.0;
+                        }
+                        e.hitFlash = 0.5;
+                    }
+                }
+            }
+        }
+
+        // Draw Deep Sea Aquarium Background & Caustic Rays
+        function drawAquariumBackground(ctx) {
+            // Gradient Ocean Depth
+            const bgGrad = ctx.createLinearGradient(0, 0, 0, currentWorldHeight);
+            bgGrad.addColorStop(0, '#0284c7');
+            bgGrad.addColorStop(0.2, '#0369a1');
+            bgGrad.addColorStop(0.6, '#0f172a');
+            bgGrad.addColorStop(1, '#020617');
+
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, currentWorldWidth, currentWorldHeight);
+
+            // Static & Ethereal Deep-Sea Volumetric Light Glow (No harsh sweeping motion)
+            ctx.save();
+            ctx.globalCompositeOperation = 'screen';
+
+            // 1. Soft Ambient Radial Light Aura from top-center surface
+            const topGlow = ctx.createRadialGradient(
+                currentWorldWidth * 0.5, 0, 10,
+                currentWorldWidth * 0.5, 0, currentWorldHeight * 0.85
+            );
+            topGlow.addColorStop(0, 'rgba(186, 230, 253, 0.22)');
+            topGlow.addColorStop(0.4, 'rgba(56, 189, 248, 0.08)');
+            topGlow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+            ctx.fillStyle = topGlow;
+            ctx.fillRect(0, 0, currentWorldWidth, currentWorldHeight);
+
+            // 2. Elegant, Static Ambient God-Rays (Gentle downward rays)
+            const rayPositions = [0.15, 0.38, 0.62, 0.85];
+            const rayWidths = [180, 240, 220, 190];
+            const rayOpacities = [0.06, 0.09, 0.08, 0.05];
+
+            rayPositions.forEach((posRatio, i) => {
+                const rayX = posRatio * currentWorldWidth;
+                const w = rayWidths[i];
+                const opacity = rayOpacities[i];
+
+                const rayGrad = ctx.createLinearGradient(rayX, 0, rayX + (i % 2 === 0 ? 60 : -60), currentWorldHeight);
+                rayGrad.addColorStop(0, `rgba(224, 242, 254, ${opacity * 1.8})`);
+                rayGrad.addColorStop(0.5, `rgba(56, 189, 248, ${opacity})`);
+                rayGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.fillStyle = rayGrad;
+                ctx.beginPath();
+                ctx.moveTo(rayX - w * 0.3, 0);
+                ctx.lineTo(rayX + w * 0.3, 0);
+                ctx.lineTo(rayX + w * 0.8, currentWorldHeight);
+                ctx.lineTo(rayX - w * 0.4, currentWorldHeight);
+                ctx.closePath();
+                ctx.fill();
+            });
+
+            ctx.restore();
         }
 
         // Visual Ripple Ring Effect
@@ -745,16 +994,47 @@
          * Main Visual Render Loop
          */
         function animateWorld() {
-            // Dynamic starry ambient glow that brightens with shapes/energy
-            const ambientAlpha = 0.2 + (globalEnergy / 100) * 0.15;
-            worldCtx.fillStyle = `rgba(7, 9, 19, ${ambientAlpha})`;
+            // Smooth Camera Zoom Transition
+            cameraZoom += (targetCameraZoom - cameraZoom) * 0.05;
+
+            // Clear Screen
+            worldCtx.save();
+            worldCtx.fillStyle = '#020617';
             worldCtx.fillRect(0, 0, worldCanvas.width, worldCanvas.height);
+
+            // Apply Camera Zoom & Centering Transformation Matrix
+            worldCtx.save();
+            const offsetX = (worldCanvas.width - currentWorldWidth * cameraZoom) / 2;
+            const offsetY = (worldCanvas.height - currentWorldHeight * cameraZoom) / 2;
+            worldCtx.translate(offsetX, offsetY);
+            worldCtx.scale(cameraZoom, cameraZoom);
+
+            // Draw Aquarium Background
+            drawAquariumBackground(worldCtx);
 
             // Decay energy bar
             if (globalEnergy > 0) {
                 globalEnergy -= 0.2;
             }
             document.getElementById('energyBar').style.width = Math.max(0, globalEnergy) + '%';
+
+            // Automatic Periodic Bubble Spawning Gimmick
+            const now = Date.now();
+            if (now - lastBubbleSpawnTime > BUBBLE_SPAWN_INTERVAL && bubbles.length < 25) {
+                bubbles.push(new AquariumBubble());
+                lastBubbleSpawnTime = now;
+            }
+
+            // Update & Draw Bubbles
+            for (let i = bubbles.length - 1; i >= 0; i--) {
+                const b = bubbles[i];
+                if (!b.update()) {
+                    // Bubble popped inside update
+                    bubbles.splice(i, 1);
+                } else {
+                    b.draw(worldCtx);
+                }
+            }
 
             // Draw & Update Ripples
             for (let i = ripples.length - 1; i >= 0; i--) {
@@ -796,14 +1076,17 @@
                 worldCtx.restore();
             }
 
-            // Handle shape-to-shape physics collisions
-            handleShapeToShapeCollisions();
+            // Handle All Aquarium Physics & Bubble Collisions
+            handleAquariumPhysicsCollisions();
 
-            // Render Floating Entities
+            // Render Floating Creatures
             entities.forEach(entity => {
                 entity.update();
                 entity.draw(worldCtx);
             });
+
+            worldCtx.restore(); // Restore Camera Transform Matrix
+            worldCtx.restore();
 
             document.getElementById('entityCountText').textContent = entities.length;
 
@@ -895,12 +1178,21 @@
             const entity = new FloatingEntity(currentPath, color, drawCanvas.width, drawCanvas.height);
             entities.push(entity);
 
+            // Dynamically recalculate world bounds & camera zoom factor
+            updateAquariumBounds();
+
             clearDrawCanvas();
             audio.resume();
 
             if (window.innerWidth < 768) {
                 toggleMobileModal(false);
             }
+        });
+
+        // Manual Bubble Spawn Button Handler
+        document.getElementById('spawnBubbleBtn').addEventListener('click', () => {
+            bubbles.push(new AquariumBubble());
+            audio.resume();
         });
 
         // Preset Quick Shapes
@@ -937,6 +1229,10 @@
 
                 const entity = new FloatingEntity(path, color, drawCanvas.width, drawCanvas.height);
                 entities.push(entity);
+
+                // Dynamically recalculate world bounds & camera zoom factor
+                updateAquariumBounds();
+
                 audio.resume();
 
                 if (window.innerWidth < 768) {
@@ -1067,9 +1363,11 @@
         // Clear Canvas Objects
         document.getElementById('clearWorldBtn').addEventListener('click', () => {
             entities = [];
+            bubbles = [];
             ripples = [];
             sparkParticles = [];
             globalEnergy = 0;
+            updateAquariumBounds();
         });
 
         // Eraser Toggle
@@ -1101,9 +1399,10 @@
          * INITIALIZATION & INITIAL DEMO ENTITIES
          */
         window.onload = () => {
+            resizeWorldCanvas();
             resizeDrawCanvas();
 
-            // Preload 4 colorful starting shapes
+            // Preload 4 colorful starting shapes & bubbles
             setTimeout(() => {
                 const colors = ['#f43f5e', '#a855f7', '#06b6d4', '#eab308'];
                 colors.forEach((color, idx) => {
@@ -1116,6 +1415,13 @@
                     }
                     entities.push(new FloatingEntity(samplePath, color, 200, 200));
                 });
+
+                // Spawn initial set of aquarium bubbles
+                for (let i = 0; i < 8; i++) {
+                    bubbles.push(new AquariumBubble(Math.random() * currentWorldWidth, Math.random() * currentWorldHeight));
+                }
+
+                updateAquariumBounds();
             }, 300);
 
             // Start Animation Frame Loop
