@@ -56,18 +56,9 @@
     <canvas id="aquariumCanvas" class="block"></canvas>
   </div>
 
-  <!-- UIオーバーレイ: ヘッダー/タイトル -->
-  <header class="relative z-10 p-4 md:p-6 pointer-events-none flex justify-between items-start">
-    <div class="glass-panel p-4 rounded-2xl pointer-events-auto max-w-sm">
-      <h1 class="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-teal-200 to-indigo-300 flex items-center gap-2">
-        <i class="fa-solid font-normal fa-water text-cyan-400"></i> 画音共鳴 - 深海音響水槽
-      </h1>
-      <p class="text-xs text-cyan-200/70 mt-1">
-        16:9アスペクト比固定。描いた生き物が水槽へ泳ぎ出し、音を奏でます。絵が増えると水槽が自動でズームアウトします。
-      </p>
-    </div>
-
-    <!-- ステータス表示 -->
+  <!-- UIオーバーレイ: ヘッダー（右上のステータス表示のみ配置） -->
+  <header class="relative z-10 p-4 md:p-6 pointer-events-none flex justify-end items-start">
+    <!-- ステータス表示（生物数・拡大率・泡数） -->
     <div class="glass-panel px-4 py-2 rounded-xl pointer-events-auto text-xs flex gap-4 text-cyan-200/80">
       <div><i class="fa-solid fa-fish text-cyan-400 mr-1"></i> 生物数: <span id="creatureCount" class="font-bold text-white">0</span></div>
       <div><i class="fa-solid fa-expand text-teal-400 mr-1"></i> 水槽拡大率: <span id="zoomLevel" class="font-bold text-white">100%</span></div>
@@ -97,7 +88,6 @@
           <i class="fa-solid fa-pen-nib text-cyan-400"></i> 生き物を描く（重ね描き可）
         </span>
         <div class="flex gap-2 items-center">
-          <!-- ★追加：別ウィンドウ表示ボタン -->
           <button id="openPopoutBtn" class="text-xs bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 px-2 py-1 rounded-lg border border-cyan-500/40 transition-colors flex items-center gap-1">
             <i class="fa-solid fa-up-right-from-square"></i> 別ウィンドウ
           </button>
@@ -592,7 +582,6 @@
       }
     }
 
-    // 生物追加用ヘルパー関数
     function spawnCreatureFromData(strokesData, colorData) {
       if (!strokesData || strokesData.length === 0) return;
       const newCreature = new Creature(strokesData, colorData);
@@ -766,7 +755,7 @@
       });
     });
 
-    // --- ★追加：お絵描き専用サブウィンドウの生成・連携機能 ---
+    // --- お絵描き専用サブウィンドウ機能 ---
     document.getElementById('openPopoutBtn').addEventListener('click', () => {
       const popout = window.open('', 'SoundAquariumCanvas', 'width=450,height=600');
       if (!popout) {
@@ -921,7 +910,7 @@
       popout.document.close();
     });
 
-    // ★サブウィンドウからの放流メッセージを受信
+    // サブウィンドウからの放流メッセージを受信
     window.addEventListener('message', (event) => {
       if (event.data && event.data.type === 'SPAWN_CREATURE') {
         spawnCreatureFromData(event.data.strokes, event.data.color);
