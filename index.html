@@ -87,7 +87,7 @@
       </div>
     </div>
 
-    <!-- 右下: お絵描きパレット (さらに横幅を拡張: md:w-[600px]) -->
+    <!-- 右下: お絵描きパレット -->
     <div class="glass-panel p-3 md:p-4 rounded-3xl pointer-events-auto flex flex-col gap-2.5 md:gap-3 w-full md:w-[600px] shadow-2xl transition-all duration-300">
       <!-- ヘッダー（タイトルとボタン） -->
       <div class="flex justify-between items-center">
@@ -107,7 +107,7 @@
 
       <!-- 折りたたみ可能な本体部分 -->
       <div id="paletteBody" class="flex flex-col gap-2.5 md:gap-3 transition-all duration-300">
-        <!-- 描画キャンバス領域 (さらに縦幅を拡張: h-64 md:h-96) -->
+        <!-- 描画キャンバス領域 -->
         <div class="relative w-full h-64 md:h-96 bg-slate-900/90 rounded-2xl border border-cyan-500/30 overflow-hidden shadow-inner">
           <canvas id="drawCanvas" class="w-full h-full block"></canvas>
           <div id="drawPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-500 text-[10px] md:text-xs">
@@ -653,7 +653,8 @@
     function updateAquariumScale() {
       creatureCountEl.textContent = creatures.length;
       
-      targetCameraZoom = Math.max(0.4, 1.0 / (1 + Math.max(0, creatures.length - 3) * 0.06));
+      // ★変更点：放流時の水槽の広がり具合を大幅にアップ（0.06 -> 0.2）、限界値も緩和（0.4 -> 0.15）
+      targetCameraZoom = Math.max(0.15, 1.0 / (1 + Math.max(0, creatures.length - 3) * 0.2));
       worldWidth = BASE_WORLD_WIDTH / targetCameraZoom;
       worldHeight = BASE_WORLD_HEIGHT / targetCameraZoom;
 
@@ -711,7 +712,8 @@
 
     // --- レンダリングループ ---
     function render() {
-      currentCameraZoom += (targetCameraZoom - currentCameraZoom) * 0.05;
+      // ★変更点：ズームアウトするアニメーションスピードをアップ（0.05 -> 0.15）
+      currentCameraZoom += (targetCameraZoom - currentCameraZoom) * 0.15;
 
       ctx.save();
       ctx.clearRect(0, 0, aquariumCanvas.width, aquariumCanvas.height);
