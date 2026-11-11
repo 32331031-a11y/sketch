@@ -116,20 +116,42 @@
         </div>
 
         <!-- 筆の設定 & アクション -->
-        <div class="flex items-center justify-between gap-2">
-          <div class="flex items-center gap-1 bg-slate-900/60 p-1 md:p-1.5 rounded-xl border border-slate-800">
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-cyan-400 border-2 border-white scale-110" data-color="#22d3ee"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-emerald-400 border-2 border-transparent" data-color="#34d399"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-indigo-400 border-2 border-transparent" data-color="#818cf8"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-purple-400 border-2 border-transparent" data-color="#c084fc"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-teal-200 border-2 border-transparent" data-color="#99f6e4"></button>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          
+          <!-- 追加: カラーバリエーション（8色） -->
+          <div class="flex flex-wrap items-center gap-1.5 bg-slate-900/60 p-1.5 md:p-2 rounded-xl border border-slate-800">
+            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-cyan-400 border-2 border-white scale-110 shadow-sm" data-color="#22d3ee"></button>
+            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-emerald-400 border-2 border-transparent shadow-sm" data-color="#34d399"></button>
+            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-indigo-400 border-2 border-transparent shadow-sm" data-color="#818cf8"></button>
+            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-purple-400 border-2 border-transparent shadow-sm" data-color="#c084fc"></button>
+            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-rose-400 border-2 border-transparent shadow-sm" data-color="#fb7185"></button>
+            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-orange-400 border-2 border-transparent shadow-sm" data-color="#fb923c"></button>
+            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-amber-300 border-2 border-transparent shadow-sm" data-color="#fcd34d"></button>
+            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-teal-200 border-2 border-transparent shadow-sm" data-color="#99f6e4"></button>
           </div>
 
-          <input id="brushSize" type="range" min="3" max="15" value="6" class="w-16 md:w-20 accent-cyan-400">
+          <div class="flex items-center gap-2 w-full md:w-auto">
+            <!-- 追加: 太さのボタン形式 -->
+            <div class="flex items-center justify-center gap-3 bg-slate-900/60 p-1.5 md:p-2 rounded-xl border border-slate-800 h-9 md:h-10">
+              <button class="size-btn flex items-center justify-center w-6 h-6" data-size="3">
+                <span class="block bg-slate-500 rounded-full transition-all pointer-events-none" style="width: 4px; height: 4px;"></span>
+              </button>
+              <button class="size-btn flex items-center justify-center w-6 h-6" data-size="6">
+                <span class="block bg-white rounded-full transition-all pointer-events-none shadow-[0_0_5px_#22d3ee]" style="width: 8px; height: 8px;"></span>
+              </button>
+              <button class="size-btn flex items-center justify-center w-6 h-6" data-size="10">
+                <span class="block bg-slate-500 rounded-full transition-all pointer-events-none" style="width: 14px; height: 14px;"></span>
+              </button>
+              <button class="size-btn flex items-center justify-center w-6 h-6" data-size="15">
+                <span class="block bg-slate-500 rounded-full transition-all pointer-events-none" style="width: 20px; height: 20px;"></span>
+              </button>
+            </div>
 
-          <button id="spawnBtn" class="flex-1 py-2 md:py-2.5 px-3 md:px-4 bg-gradient-to-r from-teal-400 to-cyan-500 hover:from-teal-300 hover:to-cyan-400 text-slate-950 font-black rounded-xl text-[11px] md:text-xs shadow-lg transition-all duration-200 flex items-center justify-center gap-1.5">
-            <i class="fa-solid fa-paper-plane"></i> 放流
-          </button>
+            <button id="spawnBtn" class="flex-1 md:flex-none py-2 md:py-2.5 px-4 md:px-5 bg-gradient-to-r from-teal-400 to-cyan-500 hover:from-teal-300 hover:to-cyan-400 text-slate-950 font-black rounded-xl text-[11px] md:text-xs shadow-lg transition-all duration-200 flex items-center justify-center gap-1.5 h-9 md:h-10">
+              <i class="fa-solid fa-paper-plane"></i> 放流
+            </button>
+          </div>
+
         </div>
       </div>
     </div>
@@ -280,12 +302,16 @@
     let currentColor = '#22d3ee';
     let currentBrushSize = 6;
 
+    // 追加: 色のバリエーションを8色に
     function transformToOceanGlow(hexColor) {
       const colorMap = {
         '#22d3ee': { inner: '#67e8f9', outer: 'rgba(34, 211, 238, 0.75)' },
         '#34d399': { inner: '#6ee7b7', outer: 'rgba(52, 211, 153, 0.75)' },
         '#818cf8': { inner: '#a5b4fc', outer: 'rgba(129, 140, 248, 0.75)' },
         '#c084fc': { inner: '#e9d5ff', outer: 'rgba(192, 132, 252, 0.75)' },
+        '#fb7185': { inner: '#fecdd3', outer: 'rgba(251, 113, 133, 0.75)' },
+        '#fb923c': { inner: '#fed7aa', outer: 'rgba(251, 146, 60, 0.75)' },
+        '#fcd34d': { inner: '#fef3c7', outer: 'rgba(252, 211, 77, 0.75)' },
         '#99f6e4': { inner: '#ccfbf1', outer: 'rgba(153, 246, 228, 0.85)' }
       };
       return colorMap[hexColor] || { inner: '#ffffff', outer: 'rgba(255, 255, 255, 0.8)' };
@@ -417,8 +443,23 @@
       });
     });
 
-    document.getElementById('brushSize').addEventListener('input', (e) => {
-      currentBrushSize = e.target.value;
+    // 追加: 太さ選択ボタンの処理
+    document.querySelectorAll('.size-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const targetBtn = e.target.closest('.size-btn');
+        if (!targetBtn) return;
+        
+        document.querySelectorAll('.size-btn span').forEach(indicator => {
+          indicator.classList.remove('bg-white', 'shadow-[0_0_5px_#22d3ee]');
+          indicator.classList.add('bg-slate-500');
+        });
+        
+        const currentIndicator = targetBtn.querySelector('span');
+        currentIndicator.classList.remove('bg-slate-500');
+        currentIndicator.classList.add('bg-white', 'shadow-[0_0_5px_#22d3ee]');
+        
+        currentBrushSize = parseInt(targetBtn.dataset.size);
+      });
     });
 
     // --- パレットの最小化・展開トグル機能 ---
@@ -448,6 +489,8 @@
         this.strokes = strokes;
         this.rawColor = rawColor;
         this.style = transformToOceanGlow(rawColor);
+        // 追加: 最後に音を鳴らした時間
+        this.lastSoundTime = 0;
 
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         let totalPts = 0, sumX = 0, sumY = 0;
@@ -502,7 +545,12 @@
         if (this.y + this.radius > halfH) { this.y = halfH - this.radius; this.vy *= -1; hit = true; }
 
         if (hit) {
-          sound.playImpactSound(this.radius, this.rawColor, this.strokeCount);
+          const now = Date.now();
+          // 壁衝突時の300msクールダウン（音の連続鳴り防止用）
+          if (now - this.lastSoundTime > 300) {
+            sound.playImpactSound(this.radius, this.rawColor, this.strokeCount);
+            this.lastSoundTime = now;
+          }
           createImpactSparks(this.x, this.y, this.style.inner);
         }
       }
@@ -653,7 +701,7 @@
     function updateAquariumScale() {
       creatureCountEl.textContent = creatures.length;
       
-      // ★変更点：放流時の水槽の広がり具合を大幅にアップ（0.06 -> 0.2）、限界値も緩和（0.4 -> 0.15）
+      // 変更維持: 放流時の水槽の広がり具合をアップ（限界値0.15）
       targetCameraZoom = Math.max(0.15, 1.0 / (1 + Math.max(0, creatures.length - 3) * 0.2));
       worldWidth = BASE_WORLD_WIDTH / targetCameraZoom;
       worldHeight = BASE_WORLD_HEIGHT / targetCameraZoom;
@@ -680,21 +728,30 @@
             const nx = dx / (dist || 1);
             const ny = dy / (dist || 1);
 
-            c1.x -= nx * overlap * 0.5;
-            c1.y -= ny * overlap * 0.5;
-            c2.x += nx * overlap * 0.5;
-            c2.y += ny * overlap * 0.5;
+            // ★修正: 完全に重なりを解消するため、少しだけ強めに押し出して再衝突を防ぎます
+            c1.x -= nx * overlap * 0.51;
+            c1.y -= ny * overlap * 0.51;
+            c2.x += nx * overlap * 0.51;
+            c2.y += ny * overlap * 0.51;
 
+            // ★修正: Y軸方向の計算式に間違い（c2.vxになっていた）があったため、c2.vyに修正しました
             const kx = c1.vx - c2.vx;
-            const ky = c1.vy - c2.vx;
+            const ky = c1.vy - c2.vy;
             const p = 2 * (nx * kx + ny * ky) / (c1.mass + c2.mass);
 
+            // ★修正: 完全弾性衝突（速度の更新）
             c1.vx -= p * c2.mass * nx;
             c1.vy -= p * c2.mass * ny;
             c2.vx += p * c1.mass * nx;
             c2.vy += p * c1.mass * ny;
 
-            sound.playImpactSound((c1.radius + c2.radius) / 2, c1.rawColor, c1.strokeCount);
+            const now = Date.now();
+            // 音の連続鳴り防止用（クールダウンは音の制御のみに使用します）
+            if (now - c1.lastSoundTime > 300 && now - c2.lastSoundTime > 300) {
+              sound.playImpactSound((c1.radius + c2.radius) / 2, c1.rawColor, c1.strokeCount);
+              c1.lastSoundTime = now;
+              c2.lastSoundTime = now;
+            }
             createImpactSparks((c1.x + c2.x) / 2, (c1.y + c2.y) / 2, c1.style.inner, 6);
           }
         }
@@ -712,7 +769,7 @@
 
     // --- レンダリングループ ---
     function render() {
-      // ★変更点：ズームアウトするアニメーションスピードをアップ（0.05 -> 0.15）
+      // 変更維持: ズームアウトアニメーションスピード
       currentCameraZoom += (targetCameraZoom - currentCameraZoom) * 0.15;
 
       ctx.save();
@@ -721,6 +778,7 @@
       const w = aquariumCanvas.width;
       const h = aquariumCanvas.height;
 
+      // 復元: 水槽らしいグラデーション背景
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
       bgGrad.addColorStop(0, '#06152d');
       bgGrad.addColorStop(0.4, '#030e20');
@@ -728,6 +786,7 @@
       ctx.fillStyle = bgGrad;
       ctx.fillRect(0, 0, w, h);
 
+      // 復元: 光の差し込み表現
       ctx.save();
       ctx.globalCompositeOperation = 'screen';
       const rayGrad = ctx.createRadialGradient(w / 2, -100, 50, w / 2, h * 0.8, w * 0.8);
