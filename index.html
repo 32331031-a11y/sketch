@@ -76,7 +76,6 @@
       <i class="fa-solid fa-chevron-down w-8 h-8 flex items-center justify-center bg-cyan-500/20 rounded-lg transition-transform" id="envToggleIcon"></i>
     </div>
     <div id="envControlsBody" class="flex flex-col gap-3 mt-2">
-      <!-- 大型化されたアクションボタン -->
       <button id="addBubbleBtn" class="w-full py-4 bg-slate-800/80 hover:bg-cyan-500/40 text-cyan-100 rounded-2xl text-lg font-bold border-2 border-cyan-500/40 shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
         <i class="fa-solid fa-soap text-2xl text-cyan-400"></i> あわをだす
       </button>
@@ -108,7 +107,7 @@
       </div>
     </div>
 
-    <!-- キャンバス領域 (画面いっぱいに広がる) -->
+    <!-- キャンバス領域 -->
     <div class="flex-1 relative w-full p-2 md:p-5">
       <div class="w-full h-full bg-slate-900/90 rounded-2xl border border-cyan-500/30 overflow-hidden relative shadow-inner">
         <canvas id="drawCanvas" class="w-full h-full block"></canvas>
@@ -158,7 +157,6 @@
       constructor() {
         this.ctx = null;
         this.masterGain = null;
-        // ペンタトニックスケールで固定
         this.scale = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
         this.initialized = false;
       }
@@ -593,9 +591,10 @@
       bgGrad.addColorStop(0, '#06152d'); bgGrad.addColorStop(1, '#020611');
       ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, w, h);
 
+      // ★修正箇所：ズームアウトの条件を「6匹以上から」「少しずつ（2%刻み）」「最大60%まで」に変更しました
       let targetZoom = 1.0;
-      if (creatures.length > 1) {
-        targetZoom = Math.max(0.3, 1.0 - (creatures.length - 1) * 0.1);
+      if (creatures.length > 5) {
+        targetZoom = Math.max(0.6, 1.0 - (creatures.length - 5) * 0.02);
       }
       
       currentCameraZoom += (targetZoom - currentCameraZoom) * 0.05;
