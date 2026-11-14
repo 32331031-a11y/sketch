@@ -348,7 +348,6 @@
         this.lastSoundTime = 0;
         this.eatTimer = 0; 
 
-        // 元々の描画のバウンディングボックスを計算
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         strokesData.forEach(s => s.path.forEach(pt => {
           if (pt.x < minX) minX = pt.x; if (pt.x > maxX) maxX = pt.x;
@@ -356,23 +355,19 @@
         }));
         if (minX === Infinity) { minX=0; maxX=10; minY=0; maxY=10; } 
         
-        // --- 修正箇所：描かれた絵がデカすぎるときに自動でスケールダウンする ---
         let rawWidth = Math.max(20, maxX - minX);
         let rawHeight = Math.max(20, maxY - minY);
         
-        // 最大サイズを 150px 程度に制限
-        const MAX_SIZE = 150;
+        // ★修正点1：最大サイズをさらに小さく（90px）して縮小率をアップ
+        const MAX_SIZE = 90;
         const scale = Math.min(1.0, MAX_SIZE / Math.max(rawWidth, rawHeight));
         
-        // 実際の水槽内でのサイズにスケールを適用
         this.width = rawWidth * scale;
         this.height = rawHeight * scale;
         this.radius = Math.max(15, Math.hypot(this.width, this.height) / 2);
         
-        // 描画の中心座標（元の座標系）
         const cx = minX + rawWidth/2;
         const cy = minY + rawHeight/2;
-        // -----------------------------------------------------------------
 
         this.baseSpeed = 2.5 + Math.random() * 3.5;
         const angle = Math.random() * Math.PI * 2;
@@ -400,7 +395,6 @@
             ccCtx.strokeStyle = isInner ? style.inner : style.outer;
             ccCtx.fillStyle = isInner ? style.inner : style.outer;
             
-            // ペンの太さもスケールに合わせて少し細く調整（細くなりすぎないように制限）
             let scaledSize = s.size * scale;
             ccCtx.lineWidth = isInner ? Math.max(2, scaledSize - 3) : Math.max(4, scaledSize + 4);
             
@@ -540,11 +534,25 @@
         sound.playBubblePopSound(this.radius);
         createImpactSparks(this.x, this.y, '#67e8f9', 6);
       }
+      
+      // ★修正点2：泡の存在感をアップ（発光と塗りつぶしを追加）
       draw(ctx) {
+        ctx.save();
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.strokeStyle = 'rgba(165, 243, 252, 0.5)';
+        
+        // 淡い塗りつぶし
+        ctx.fillStyle = 'rgba(165, 243, 252, 0.15)';
+        ctx.fill();
+        
+        // はっきりした輪郭と発光
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(165, 243, 252, 0.8)';
+        ctx.shadowColor = '#67e8f9';
+        ctx.shadowBlur = 12;
         ctx.stroke();
+        
+        ctx.restore();
       }
     }
 
@@ -598,7 +606,6 @@
       bgGrad.addColorStop(0, '#06152d'); bgGrad.addColorStop(1, '#020611');
       ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, w, h);
 
-      // --- 生き物の数に応じた自動ズームアウト（2匹目からすぐに引くように設定） ---
       let targetZoom = 1.0;
       if (creatures.length > 1) {
         targetZoom = Math.max(0.3, 1.0 - (creatures.length - 1) * 0.1);
@@ -658,7 +665,22 @@
     document.getElementById('startAudioBtn').addEventListener('click', (e) => {
       sound.init(); document.getElementById('audioStartModal').remove();
       resize(); initDrawCanvas();
+      
+      // ★修正点3：初期の生き物を「魚3匹＋クラゲ1匹」に増加
+      // 青い魚
       creatures.push(new Creature([{ path: [{x:40,y:50},{x:70,y:30},{x:110,y:50},{x:70,y:70},{x:40,y:50}], color: '#818cf8', size: 6 }]));
+      // 小さな緑の魚
+      creatures.push(new Creature([{ path: [{x:10,y:20},{x:30,y:10},{x:50,y:20},{x:30,y:30},{x:10,y:20}], color: '#34d399', size: 4 }]));
+      // 黄色い魚
+      creatures.push(new Creature([{ path: [{x:30,y:40},{x:60,y:20},{x:90,y:40},{x:110,y:60},{x:60,y:60},{x:30,y:40}], color: '#fcd34d', size: 8 }]));
+      // 紫のクラゲ風
+      creatures.push(new Creature([
+        { path: [{x:50,y:30},{x:70,y:20},{x:90,y:30},{x:90,y:50},{x:50,y:50},{x:50,y:30}], color: '#c084fc', size: 6 },
+        { path: [{x:60,y:50},{x:60,y:80}], color: '#c084fc', size: 4 },
+        { path: [{x:70,y:50},{x:70,y:85}], color: '#c084fc', size: 4 },
+        { path: [{x:80,y:50},{x:80,y:80}], color: '#c084fc', size: 4 }
+      ]));
+
       requestAnimationFrame(render);
     });
 
