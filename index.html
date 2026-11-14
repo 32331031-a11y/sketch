@@ -1,9 +1,14 @@
+途中でコードが途切れてしまっているようです。また、ズームアウト機能がすぐに体感できるように修正（2匹目からズームアウト開始）を適用した**完全なHTMLコード**を以下にまとめました。
+
+こちらのコードをすべてコピーして、HTMLファイルに上書き保存してください。一番下の `</html>` まで確実に含まれています。
+
+```html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>画音共鳴 - 深海音響水槽 (16:9)</title>
+  <title>画音共鳴 - 深海音響水槽</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
@@ -23,10 +28,6 @@
       font-family: 'Zen Kaku Gothic New', sans-serif;
     }
 
-    .safe-footer {
-      padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
-    }
-
     .glow-effect {
       box-shadow: 0 0 25px rgba(56, 189, 248, 0.4), inset 0 0 15px rgba(56, 189, 248, 0.2);
     }
@@ -44,125 +45,126 @@
     }
   </style>
 </head>
-<body class="w-screen h-[100dvh] relative bg-slate-950 text-slate-100 flex flex-col justify-between overflow-hidden">
+<body class="w-screen h-[100dvh] relative bg-slate-950 text-slate-100 overflow-hidden">
 
   <!-- オーディオ有効化用の最前面モーダル -->
   <div id="audioStartModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md cursor-pointer">
-    <div class="glass-panel p-6 md:p-8 rounded-3xl max-w-md w-full text-center border border-cyan-500/40 shadow-2xl">
+    <div class="glass-panel p-6 md:p-8 rounded-3xl max-w-md w-full text-center shadow-2xl">
       <div class="w-14 h-14 md:w-16 md:h-16 mx-auto mb-4 rounded-full bg-cyan-500/20 flex items-center justify-center text-cyan-300 text-2xl animate-pulse">
         <i class="fa-solid fa-volume-high"></i>
       </div>
       <h2 class="text-xl md:text-2xl font-bold mb-2 text-cyan-100">音響空間を開始</h2>
-      <p class="text-xs md:text-sm text-slate-300 mb-6">
-        画面のどこでもタップ／クリックすると水槽に入ります。<br>衝突音や泡が弾ける音が響きます。
-      </p>
-      <button id="startAudioBtn" class="w-full py-3.5 md:py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-2xl shadow-lg transition-all duration-300 transform hover:scale-105 active:scale-95 glow-effect cursor-pointer text-sm md:text-base">
+      <p class="text-xs md:text-sm text-slate-300 mb-6">画面をタップして水槽に入ります。</p>
+      <button id="startAudioBtn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold rounded-2xl shadow-lg glow-effect">
         水槽に入る（音声を有効化）
       </button>
     </div>
   </div>
 
-  <!-- メイン水槽スクリーン (ワールドビュー) -->
+  <!-- メイン水槽スクリーン -->
   <div id="canvasContainer" class="absolute inset-0 w-full h-full overflow-hidden bg-slate-950 flex items-center justify-center">
     <canvas id="aquariumCanvas" class="block"></canvas>
   </div>
 
-  <!-- UIオーバーレイ: ヘッダー -->
-  <header class="relative z-10 p-2.5 md:p-6 pointer-events-none flex justify-end items-start w-full shrink-0">
+  <!-- UI: ヘッダー (情報表示) -->
+  <header class="absolute top-0 right-0 z-10 p-2.5 md:p-6 pointer-events-none flex justify-end w-full">
     <div class="glass-panel px-3 py-1.5 md:px-4 md:py-2 rounded-xl pointer-events-auto text-[10px] md:text-xs flex gap-2 md:gap-4 text-cyan-200/80">
-      <div><i class="fa-solid fa-fish text-cyan-400 mr-1"></i> 生物数: <span id="creatureCount" class="font-bold text-white">0</span></div>
-      <div><i class="fa-solid fa-expand text-teal-400 mr-1"></i> 拡大率: <span id="zoomLevel" class="font-bold text-white">100%</span></div>
-      <div><i class="fa-solid fa-circle-dot text-indigo-400 mr-1"></i> 泡数: <span id="bubbleCount" class="font-bold text-white">0</span></div>
+      <div><i class="fa-solid fa-fish text-cyan-400 mr-1"></i> 生物: <span id="creatureCount" class="font-bold text-white">0</span></div>
+      <div><i class="fa-solid fa-circle-dot text-indigo-400 mr-1"></i> 泡: <span id="bubbleCount" class="font-bold text-white">0</span></div>
     </div>
   </header>
 
-  <!-- UIオーバーレイ: お絵描きパレット & コントロール -->
-  <footer class="safe-footer relative z-10 px-2.5 pt-1 md:p-6 pointer-events-none flex flex-col md:flex-row justify-between items-end gap-2 md:gap-3 w-full">
-    
-    <!-- 左下: 音階スケール設定 -->
-    <div class="glass-panel p-2.5 md:p-4 rounded-2xl pointer-events-auto w-full md:w-auto flex flex-col gap-1 md:gap-2 shrink-0">
-      <div class="text-[10px] md:text-xs text-cyan-300/80 font-bold flex items-center gap-1">
-        <i class="fa-solid fa-sliders"></i> 音階スケール設定
+  <!-- UI: 環境コントロールパネル (最小化可能) -->
+  <div id="envControlsPanel" class="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-30 glass-panel p-3 md:p-4 rounded-2xl w-56 md:w-64 flex flex-col gap-2 transition-all duration-300">
+    <div class="flex justify-between items-center text-[10px] md:text-xs text-cyan-300 font-bold cursor-pointer" id="toggleEnvBtn">
+      <span class="flex items-center gap-1.5"><i class="fa-solid fa-sliders"></i> 環境コントロール</span>
+      <i class="fa-solid fa-chevron-down w-6 h-6 flex items-center justify-center bg-cyan-500/20 rounded-md"></i>
+    </div>
+    <div id="envControlsBody" class="flex flex-col gap-3 mt-1">
+      <div class="flex gap-1.5">
+        <button id="scalePentatonic" class="flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-cyan-500/30 border border-cyan-400 text-cyan-100 font-medium">ペンタトニック</button>
+        <button id="scaleLydian" class="flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-slate-800/60 border border-slate-700 text-slate-400 font-medium">リディアン</button>
       </div>
-      <div class="flex gap-1.5 md:gap-2">
-        <button id="scalePentatonic" class="flex-1 md:flex-none px-2.5 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs bg-cyan-500/30 border border-cyan-400 text-cyan-100 font-medium">ペンタトニック</button>
-        <button id="scaleLydian" class="flex-1 md:flex-none px-2.5 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs bg-slate-800/60 border border-slate-700 text-slate-400 font-medium hover:bg-slate-700/50">リディアン</button>
-        <button id="scaleOkinawa" class="flex-1 md:flex-none px-2.5 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs bg-slate-800/60 border border-slate-700 text-slate-400 font-medium hover:bg-slate-700/50">琉球</button>
+      <hr class="border-cyan-500/20">
+      <div class="flex gap-2">
+        <button id="addBubbleBtn" class="flex-1 py-1.5 bg-slate-800/80 hover:bg-cyan-500/40 text-cyan-200 rounded-lg text-[10px] border border-cyan-500/30 transition-colors">
+          <i class="fa-solid fa-soap mr-1"></i>泡を増やす
+        </button>
+        <button id="addFoodBtn" class="flex-1 py-1.5 bg-slate-800/80 hover:bg-amber-400/40 text-amber-200 rounded-lg text-[10px] border border-amber-500/30 transition-colors">
+          <i class="fa-solid fa-cookie-bite mr-1"></i>餌をまく
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UI: お絵かきウィンドウ起動FAB -->
+  <button id="openPaletteFab" class="absolute bottom-4 right-4 md:bottom-8 md:right-8 z-30 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-r from-teal-400 to-cyan-500 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.4)] flex items-center justify-center text-slate-950 transition-transform hover:scale-110 active:scale-95">
+    <i class="fa-solid fa-paintbrush text-xl md:text-2xl"></i>
+  </button>
+
+  <!-- UI: 全画面お絵かきモーダル -->
+  <div id="paletteModal" class="fixed inset-2 md:inset-8 z-40 glass-panel rounded-3xl flex flex-col shadow-2xl transition-all duration-300 hidden opacity-0 scale-95">
+    <!-- パレットヘッダー -->
+    <div class="flex justify-between items-center p-3 md:p-5 border-b border-cyan-500/20">
+      <span class="text-sm md:text-lg font-bold text-cyan-200 flex items-center gap-2">
+        <i class="fa-solid fa-pen-nib text-cyan-400"></i> 生き物を描く
+      </span>
+      <div class="flex gap-3 items-center">
+        <button id="clearDrawBtn" class="text-xs md:text-sm text-slate-400 hover:text-rose-400 transition-colors">
+          <i class="fa-solid fa-trash-can"></i> クリア
+        </button>
+        <button id="closePaletteBtn" class="w-8 h-8 md:w-10 md:h-10 bg-slate-800 hover:bg-rose-500/80 text-white rounded-full flex items-center justify-center transition-colors">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
     </div>
 
-    <!-- 右下: お絵描きパレット -->
-    <div class="glass-panel p-2.5 md:p-4 rounded-3xl pointer-events-auto flex flex-col gap-2 md:gap-3 w-full md:w-[540px] shadow-2xl transition-all duration-300 shrink-0">
-      <!-- ヘッダー（タイトルとボタン） -->
-      <div class="flex justify-between items-center">
-        <span class="text-[11px] md:text-xs font-bold text-cyan-200 flex items-center gap-1.5">
-          <i class="fa-solid fa-pen-nib text-cyan-400"></i> 生き物を描く
-        </span>
-        <div class="flex gap-2 items-center">
-          <button id="clearDrawBtn" class="text-[10px] md:text-xs text-slate-400 hover:text-rose-400 transition-colors mr-1">
-            <i class="fa-solid fa-trash-can"></i> クリア
-          </button>
-          <!-- 最小化・展開ボタン -->
-          <button id="togglePaletteBtn" class="text-[10px] md:text-xs bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 w-6 h-6 md:w-7 md:h-7 rounded-lg border border-cyan-500/40 transition-colors flex items-center justify-center">
-            <i class="fa-solid fa-chevron-down"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- 折りたたみ可能な本体部分 -->
-      <div id="paletteBody" class="flex flex-col gap-2 md:gap-3 transition-all duration-300">
-        <!-- 描画キャンバス領域（正方形に近づくよう縦幅を拡大し、Safariでも見切れない上限を設定） -->
-        <div class="relative w-full h-64 sm:h-72 md:h-[440px] max-h-[46dvh] bg-slate-900/90 rounded-2xl border border-cyan-500/30 overflow-hidden shadow-inner">
-          <canvas id="drawCanvas" class="w-full h-full block"></canvas>
-          <div id="drawPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-500 text-[10px] md:text-xs">
-            ここに自由に線を描いてください
-          </div>
-        </div>
-
-        <!-- 筆の設定 & アクション -->
-        <div class="flex flex-wrap items-center justify-between gap-1.5 md:gap-2">
-          
-          <!-- カラーバリエーション（8色） -->
-          <div class="flex flex-wrap items-center gap-1.5 bg-slate-900/60 p-1.5 md:p-2 rounded-xl border border-slate-800">
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-cyan-400 border-2 border-white scale-110 shadow-sm" data-color="#22d3ee"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-emerald-400 border-2 border-transparent shadow-sm" data-color="#34d399"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-indigo-400 border-2 border-transparent shadow-sm" data-color="#818cf8"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-purple-400 border-2 border-transparent shadow-sm" data-color="#c084fc"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-rose-400 border-2 border-transparent shadow-sm" data-color="#fb7185"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-orange-400 border-2 border-transparent shadow-sm" data-color="#fb923c"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-amber-300 border-2 border-transparent shadow-sm" data-color="#fcd34d"></button>
-            <button class="color-btn w-5 h-5 md:w-6 md:h-6 rounded-full bg-teal-200 border-2 border-transparent shadow-sm" data-color="#99f6e4"></button>
-          </div>
-
-          <div class="flex items-center gap-2 w-full md:w-auto">
-            <!-- 太さのボタン形式 -->
-            <div class="flex items-center justify-center gap-3 bg-slate-900/60 p-1.5 md:p-2 rounded-xl border border-slate-800 h-8 md:h-10">
-              <button class="size-btn flex items-center justify-center w-6 h-6" data-size="3">
-                <span class="block bg-slate-500 rounded-full transition-all pointer-events-none" style="width: 4px; height: 4px;"></span>
-              </button>
-              <button class="size-btn flex items-center justify-center w-6 h-6" data-size="6">
-                <span class="block bg-white rounded-full transition-all pointer-events-none shadow-[0_0_5px_#22d3ee]" style="width: 8px; height: 8px;"></span>
-              </button>
-              <button class="size-btn flex items-center justify-center w-6 h-6" data-size="10">
-                <span class="block bg-slate-500 rounded-full transition-all pointer-events-none" style="width: 14px; height: 14px;"></span>
-              </button>
-              <button class="size-btn flex items-center justify-center w-6 h-6" data-size="15">
-                <span class="block bg-slate-500 rounded-full transition-all pointer-events-none" style="width: 20px; height: 20px;"></span>
-              </button>
-            </div>
-
-            <button id="spawnBtn" class="flex-1 md:flex-none py-1.5 md:py-2.5 px-4 md:px-5 bg-gradient-to-r from-teal-400 to-cyan-500 hover:from-teal-300 hover:to-cyan-400 text-slate-950 font-black rounded-xl text-[11px] md:text-xs shadow-lg transition-all duration-200 flex items-center justify-center gap-1.5 h-8 md:h-10">
-              <i class="fa-solid fa-paper-plane"></i> 放流
-            </button>
-          </div>
-
+    <!-- キャンバス領域 (画面いっぱいに広がる) -->
+    <div class="flex-1 relative w-full p-2 md:p-5">
+      <div class="w-full h-full bg-slate-900/90 rounded-2xl border border-cyan-500/30 overflow-hidden relative shadow-inner">
+        <canvas id="drawCanvas" class="w-full h-full block"></canvas>
+        <div id="drawPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-slate-500 text-xs md:text-sm">
+          ここをなぞって線を描いたり、タップして点を打てます
         </div>
       </div>
     </div>
-  </footer>
+
+    <!-- ツールバー (色・太さ・放流) -->
+    <div class="p-3 md:p-5 flex flex-wrap items-center justify-between gap-3 bg-slate-900/60 rounded-b-3xl border-t border-cyan-500/20">
+      <div class="flex flex-wrap items-center gap-2 bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+        <!-- カラーパレット -->
+        <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-cyan-400 border-2 border-white scale-110 shadow-sm" data-color="#22d3ee"></button>
+        <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-emerald-400 border-2 border-transparent shadow-sm" data-color="#34d399"></button>
+        <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-indigo-400 border-2 border-transparent shadow-sm" data-color="#818cf8"></button>
+        <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-purple-400 border-2 border-transparent shadow-sm" data-color="#c084fc"></button>
+        <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-rose-400 border-2 border-transparent shadow-sm" data-color="#fb7185"></button>
+        <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-amber-300 border-2 border-transparent shadow-sm" data-color="#fcd34d"></button>
+        <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-white border-2 border-transparent shadow-sm" data-color="#ffffff"></button>
+      </div>
+
+      <div class="flex items-center gap-3 w-full md:w-auto">
+        <!-- 太さ選択 -->
+        <div class="flex items-center gap-4 bg-slate-800/80 p-2 rounded-xl border border-slate-700">
+          <button class="size-btn flex items-center justify-center w-8 h-8" data-size="4">
+            <span class="block bg-slate-500 rounded-full pointer-events-none" style="width: 6px; height: 6px;"></span>
+          </button>
+          <button class="size-btn flex items-center justify-center w-8 h-8" data-size="8">
+            <span class="block bg-white rounded-full pointer-events-none shadow-[0_0_5px_#22d3ee]" style="width: 12px; height: 12px;"></span>
+          </button>
+          <button class="size-btn flex items-center justify-center w-8 h-8" data-size="16">
+            <span class="block bg-slate-500 rounded-full pointer-events-none" style="width: 20px; height: 20px;"></span>
+          </button>
+        </div>
+        <!-- 放流ボタン -->
+        <button id="spawnBtn" class="flex-1 md:flex-none py-3 px-6 bg-gradient-to-r from-teal-400 to-cyan-500 hover:from-teal-300 hover:to-cyan-400 text-slate-950 font-black rounded-xl text-sm md:text-base shadow-lg transition-transform hover:scale-105 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-paper-plane"></i> 放流する
+        </button>
+      </div>
+    </div>
+  </div>
 
   <script>
-    // --- Web Audio API 音響エンジン ---
+    // --- 音響エンジン (Web Audio API) ---
     class SoundEngine {
       constructor() {
         this.ctx = null;
@@ -170,376 +172,283 @@
         this.scale = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
         this.initialized = false;
       }
-
       init() {
-        if (!this.ctx) {
-          const AudioContext = window.AudioContext || window.webkitAudioContext;
-          this.ctx = new AudioContext();
-        }
-
-        if (this.ctx.state === 'suspended') {
-          this.ctx.resume();
-        }
-
+        if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (this.ctx.state === 'suspended') this.ctx.resume();
         if (this.initialized) return;
-
         this.masterGain = this.ctx.createGain();
         this.masterGain.gain.value = 0.3;
-
         const convolver = this.ctx.createConvolver();
-        const rate = this.ctx.sampleRate;
-        const length = rate * 2.5;
+        const rate = this.ctx.sampleRate, length = rate * 2.5;
         const impulse = this.ctx.createBuffer(2, length, rate);
         for (let i = 0; i < 2; i++) {
           const channel = impulse.getChannelData(i);
-          for (let j = 0; j < length; j++) {
-            channel[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / length, 2.0);
-          }
+          for (let j = 0; j < length; j++) channel[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / length, 2.0);
         }
         convolver.buffer = impulse;
-
         this.masterGain.connect(convolver);
         convolver.connect(this.ctx.destination);
         this.masterGain.connect(this.ctx.destination);
         this.initialized = true;
       }
-
       setScale(type) {
-        if (type === 'pentatonic') {
-          this.scale = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
-        } else if (type === 'lydian') {
-          this.scale = [130.81, 146.83, 164.81, 185.00, 196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 369.99, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
-        } else if (type === 'okinawa') {
-          this.scale = [130.81, 164.81, 174.61, 196.00, 246.94, 261.63, 329.63, 349.23, 392.00, 493.88, 523.25, 659.25, 698.46, 783.99, 987.77, 1046.50];
-        }
+        if (type === 'pentatonic') this.scale = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+        else if (type === 'lydian') this.scale = [130.81, 146.83, 164.81, 185.00, 196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 369.99, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
       }
-
-      playImpactSound(size, colorHex, strokeCount) {
+      playImpactSound(size, colorHex) {
         if (!this.initialized || !this.ctx) return;
         const now = this.ctx.currentTime;
-
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
+        const osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
         const sizeRatio = Math.max(0, Math.min(1, 1 - (size - 15) / 80));
         const baseIndex = Math.floor(sizeRatio * (this.scale.length - 4));
-        const varietyOffset = Math.abs(this.hashCode(colorHex) + strokeCount * 3) % 4; 
-        const noteIndex = baseIndex + varietyOffset;
-        const freq = this.scale[noteIndex] || 440;
-        osc.frequency.setValueAtTime(freq, now);
-
-        const waveTypes = ['sine', 'triangle', 'sine', 'triangle'];
-        const typeIdx = Math.abs(this.hashCode(colorHex)) % waveTypes.length;
-        osc.type = waveTypes[typeIdx];
-
-        const attack = 0.01 + Math.min(strokeCount * 0.01, 0.05);
-        const decay = 0.3 + (size / 50) * 0.4;
-
+        const noteIndex = baseIndex + (this.hashCode(colorHex) % 4);
+        osc.frequency.setValueAtTime(this.scale[noteIndex] || 440, now);
+        osc.type = ['sine', 'triangle'][Math.abs(this.hashCode(colorHex)) % 2];
+        const attack = 0.02, decay = 0.3 + (size / 50) * 0.4;
         gain.gain.setValueAtTime(0, now);
         gain.gain.linearRampToValueAtTime(0.4, now + attack);
         gain.gain.exponentialRampToValueAtTime(0.0001, now + attack + decay);
-
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-
-        osc.start(now);
-        osc.stop(now + attack + decay + 0.1);
+        osc.connect(gain); gain.connect(this.masterGain);
+        osc.start(now); osc.stop(now + attack + decay + 0.1);
       }
-
       playBubblePopSound(radius) {
         if (!this.initialized || !this.ctx) return;
-        const now = this.ctx.currentTime;
-
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        const startFreq = 400 + (30 - Math.min(radius, 25)) * 30;
-        const endFreq = startFreq + 300;
-
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(startFreq, now);
-        osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.04);
-
+        const now = this.ctx.currentTime, osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+        osc.frequency.setValueAtTime(400 + (30 - Math.min(radius, 25)) * 30, now);
+        osc.frequency.exponentialRampToValueAtTime(osc.frequency.value + 300, now + 0.04);
         gain.gain.setValueAtTime(0.3, now);
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
-
-        osc.connect(gain);
-        gain.connect(this.masterGain);
-
-        osc.start(now);
-        osc.stop(now + 0.06);
+        osc.connect(gain); gain.connect(this.masterGain);
+        osc.start(now); osc.stop(now + 0.06);
       }
-
+      playEatSound() {
+        if (!this.initialized || !this.ctx) return;
+        const now = this.ctx.currentTime, osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.exponentialRampToValueAtTime(900, now + 0.1);
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.connect(gain); gain.connect(this.masterGain);
+        osc.start(now); osc.stop(now + 0.15);
+      }
       hashCode(str) {
         let hash = 0;
         for (let i = 0; i < str.length; i++) hash = (hash << 5) - hash + str.charCodeAt(i);
-        return hash;
+        return Math.abs(hash);
       }
     }
-
     const sound = new SoundEngine();
 
-    // --- メインアプリ ---
+    // --- メインアプリ管理 ---
     const aquariumCanvas = document.getElementById('aquariumCanvas');
     const ctx = aquariumCanvas.getContext('2d');
-
     const drawCanvas = document.getElementById('drawCanvas');
     const drawCtx = drawCanvas.getContext('2d');
 
-    const creatureCountEl = document.getElementById('creatureCount');
-    const zoomLevelEl = document.getElementById('zoomLevel');
-    const bubbleCountEl = document.getElementById('bubbleCount');
-
-    let creatures = [];
-    let bubbles = [];
-    let particles = [];
-
-    // 16:9 基準ワールド寸法
-    const BASE_WORLD_WIDTH = 1920;
-    const BASE_WORLD_HEIGHT = 1080;
-    let worldWidth = BASE_WORLD_WIDTH;
-    let worldHeight = BASE_WORLD_HEIGHT;
-
-    let targetCameraZoom = 1.0;
+    let creatures = [], bubbles = [], particles = [], foods = [];
+    let worldWidth = 1920, worldHeight = 1080;
+    const BASE_WORLD_WIDTH = 1920, BASE_WORLD_HEIGHT = 1080;
     let currentCameraZoom = 1.0;
 
-    let isDrawing = false;
-    let currentStrokes = [];
+    // --- お絵かき関連（多色・ストローク対応） ---
+    let currentStrokes = []; // 構造: { path: [{x,y}...], color: '#...', size: 8 }
     let currentPath = [];
+    let isDrawing = false;
     let currentColor = '#22d3ee';
-    let currentBrushSize = 6;
+    let currentBrushSize = 8;
 
-    // 色のバリエーション（8色）
     function transformToOceanGlow(hexColor) {
-      const colorMap = {
-        '#22d3ee': { inner: '#67e8f9', outer: 'rgba(34, 211, 238, 0.75)' },
-        '#34d399': { inner: '#6ee7b7', outer: 'rgba(52, 211, 153, 0.75)' },
-        '#818cf8': { inner: '#a5b4fc', outer: 'rgba(129, 140, 248, 0.75)' },
-        '#c084fc': { inner: '#e9d5ff', outer: 'rgba(192, 132, 252, 0.75)' },
-        '#fb7185': { inner: '#fecdd3', outer: 'rgba(251, 113, 133, 0.75)' },
-        '#fb923c': { inner: '#fed7aa', outer: 'rgba(251, 146, 60, 0.75)' },
-        '#fcd34d': { inner: '#fef3c7', outer: 'rgba(252, 211, 77, 0.75)' },
-        '#99f6e4': { inner: '#ccfbf1', outer: 'rgba(153, 246, 228, 0.85)' }
+      const map = {
+        '#22d3ee': { inner: '#67e8f9', outer: 'rgba(34, 211, 238, 0.8)' },
+        '#34d399': { inner: '#6ee7b7', outer: 'rgba(52, 211, 153, 0.8)' },
+        '#818cf8': { inner: '#a5b4fc', outer: 'rgba(129, 140, 248, 0.8)' },
+        '#c084fc': { inner: '#e9d5ff', outer: 'rgba(192, 132, 252, 0.8)' },
+        '#fb7185': { inner: '#fecdd3', outer: 'rgba(251, 113, 133, 0.8)' },
+        '#fcd34d': { inner: '#fef3c7', outer: 'rgba(252, 211, 77, 0.8)' },
+        '#ffffff': { inner: '#ffffff', outer: 'rgba(255, 255, 255, 0.8)' }
       };
-      return colorMap[hexColor] || { inner: '#ffffff', outer: 'rgba(255, 255, 255, 0.8)' };
-    }
-
-    // 16:9 画角維持レスポンシブサイズ決定
-    function resize() {
-      const winW = window.innerWidth;
-      const winH = window.innerHeight;
-      const targetAspect = 16 / 9;
-      const windowAspect = winW / winH;
-
-      if (windowAspect > targetAspect) {
-        aquariumCanvas.height = winH;
-        aquariumCanvas.width = winH * targetAspect;
-      } else {
-        aquariumCanvas.width = winW;
-        aquariumCanvas.height = winW / targetAspect;
-      }
-
-      if (document.getElementById('paletteBody').style.display !== 'none') {
-        const rect = drawCanvas.getBoundingClientRect();
-        drawCanvas.width = rect.width;
-        drawCanvas.height = rect.height;
-        redrawUserCanvas();
-      }
-    }
-    window.addEventListener('resize', resize);
-
-    function getCanvasPos(e) {
-      const rect = drawCanvas.getBoundingClientRect();
-      const clientX = e.touches && e.touches.length > 0 ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches && e.touches.length > 0 ? e.touches[0].clientY : e.clientY;
-      return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-      };
+      return map[hexColor] || { inner: '#ffffff', outer: `rgba(255,255,255,0.8)` };
     }
 
     function initDrawCanvas() {
-      const rect = drawCanvas.getBoundingClientRect();
-      drawCanvas.width = rect.width;
-      drawCanvas.height = rect.height;
+      const setSize = () => {
+        const rect = drawCanvas.parentElement.getBoundingClientRect();
+        drawCanvas.width = rect.width;
+        drawCanvas.height = rect.height;
+        redrawUserCanvas();
+      };
+      window.addEventListener('resize', setSize);
 
-      const startDraw = (e) => {
-        isDrawing = true;
-        document.getElementById('drawPlaceholder').style.display = 'none';
-        const pt = getCanvasPos(e);
-        currentPath = [pt];
+      const getPos = (e) => {
+        const rect = drawCanvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - rect.left, y: clientY - rect.top };
       };
 
-      const moveDraw = (e) => {
+      const start = (e) => {
+        isDrawing = true;
+        document.getElementById('drawPlaceholder').style.display = 'none';
+        currentPath = [getPos(e)];
+        drawCurrentPath();
+      };
+      const move = (e) => {
         if (!isDrawing) return;
-        const pt = getCanvasPos(e);
-        currentPath.push(pt);
+        currentPath.push(getPos(e));
         redrawUserCanvas();
         drawCurrentPath();
       };
-
-      const endDraw = () => {
+      const end = () => {
         if (isDrawing) {
           isDrawing = false;
-          if (currentPath.length > 1) currentStrokes.push(currentPath);
+          if (currentPath.length >= 1) {
+            currentStrokes.push({ path: currentPath, color: currentColor, size: currentBrushSize });
+          }
           currentPath = [];
           redrawUserCanvas();
         }
       };
 
-      drawCanvas.addEventListener('mousedown', startDraw);
-      drawCanvas.addEventListener('mousemove', moveDraw);
-      window.addEventListener('mouseup', endDraw);
+      drawCanvas.addEventListener('mousedown', start);
+      drawCanvas.addEventListener('mousemove', move);
+      window.addEventListener('mouseup', end);
+      drawCanvas.addEventListener('touchstart', e => { e.preventDefault(); start(e); }, { passive: false });
+      drawCanvas.addEventListener('touchmove', e => { e.preventDefault(); move(e); }, { passive: false });
+      window.addEventListener('touchend', end);
+    }
 
-      drawCanvas.addEventListener('touchstart', (e) => {
-        if (e.cancelable) e.preventDefault();
-        startDraw(e);
-      }, { passive: false });
-
-      drawCanvas.addEventListener('touchmove', (e) => {
-        if (e.cancelable) e.preventDefault();
-        moveDraw(e);
-      }, { passive: false });
-
-      window.addEventListener('touchend', endDraw);
-      window.addEventListener('touchcancel', endDraw);
+    function drawSingleStroke(ctx, strokeData) {
+      const { path, color, size } = strokeData;
+      if (path.length === 0) return;
+      ctx.save();
+      ctx.strokeStyle = color; ctx.fillStyle = color;
+      ctx.lineWidth = size; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.shadowColor = color; ctx.shadowBlur = 10;
+      ctx.beginPath();
+      if (path.length === 1) { 
+        ctx.arc(path[0].x, path[0].y, size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.moveTo(path[0].x, path[0].y);
+        for (let i = 1; i < path.length; i++) ctx.lineTo(path[i].x, path[i].y);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
 
     function redrawUserCanvas() {
       drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-      currentStrokes.forEach(stroke => drawStroke(stroke, currentColor, currentBrushSize));
+      currentStrokes.forEach(s => drawSingleStroke(drawCtx, s));
     }
-
     function drawCurrentPath() {
-      if (currentPath.length < 2) return;
-      drawStroke(currentPath, currentColor, currentBrushSize);
+      if (currentPath.length > 0) drawSingleStroke(drawCtx, { path: currentPath, color: currentColor, size: currentBrushSize });
     }
 
-    function drawStroke(path, color, size) {
-      drawCtx.save();
-      drawCtx.strokeStyle = color;
-      drawCtx.lineWidth = size;
-      drawCtx.lineCap = 'round';
-      drawCtx.lineJoin = 'round';
-      drawCtx.shadowColor = color;
-      drawCtx.shadowBlur = 8;
-
-      drawCtx.beginPath();
-      drawCtx.moveTo(path[0].x, path[0].y);
-      for (let i = 1; i < path.length; i++) drawCtx.lineTo(path[i].x, path[i].y);
-      drawCtx.stroke();
-      drawCtx.restore();
-    }
-
-    document.getElementById('clearDrawBtn').addEventListener('click', () => {
-      currentStrokes = [];
-      currentPath = [];
-      redrawUserCanvas();
-      document.getElementById('drawPlaceholder').style.display = 'flex';
-    });
-
-    document.querySelectorAll('.color-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('border-white', 'scale-110'));
-        e.target.classList.add('border-white', 'scale-110');
-        currentColor = e.target.dataset.color;
-        redrawUserCanvas();
-      });
-    });
-
-    // 太さ選択ボタンの処理
-    document.querySelectorAll('.size-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const targetBtn = e.target.closest('.size-btn');
-        if (!targetBtn) return;
-        
-        document.querySelectorAll('.size-btn span').forEach(indicator => {
-          indicator.classList.remove('bg-white', 'shadow-[0_0_5px_#22d3ee]');
-          indicator.classList.add('bg-slate-500');
-        });
-        
-        const currentIndicator = targetBtn.querySelector('span');
-        currentIndicator.classList.remove('bg-slate-500');
-        currentIndicator.classList.add('bg-white', 'shadow-[0_0_5px_#22d3ee]');
-        
-        currentBrushSize = parseInt(targetBtn.dataset.size);
-      });
-    });
-
-    // パレットの最小化・展開トグル機能
-    const togglePaletteBtn = document.getElementById('togglePaletteBtn');
-    const paletteBody = document.getElementById('paletteBody');
-    const toggleIcon = togglePaletteBtn.querySelector('i');
-    let isPaletteOpen = true;
-
-    togglePaletteBtn.addEventListener('click', () => {
-      isPaletteOpen = !isPaletteOpen;
-      if (isPaletteOpen) {
-        paletteBody.style.display = 'flex';
-        toggleIcon.classList.remove('fa-chevron-up');
-        toggleIcon.classList.add('fa-chevron-down');
-        setTimeout(resize, 10);
-      } else {
-        paletteBody.style.display = 'none';
-        toggleIcon.classList.remove('fa-chevron-down');
-        toggleIcon.classList.add('fa-chevron-up');
-      }
-    });
-
-    // --- 生き物クラス ---
     class Creature {
-      constructor(strokes, rawColor) {
-        this.strokes = strokes;
-        this.rawColor = rawColor;
-        this.style = transformToOceanGlow(rawColor);
+      constructor(strokesData) {
+        this.strokes = strokesData;
+        this.rawColor = strokesData.length > 0 ? strokesData[0].color : '#22d3ee';
         this.lastSoundTime = 0;
+        this.eatTimer = 0; 
 
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-        let totalPts = 0, sumX = 0, sumY = 0;
-
-        strokes.forEach(stroke => {
-          stroke.forEach(pt => {
-            if (pt.x < minX) minX = pt.x;
-            if (pt.x > maxX) maxX = pt.x;
-            if (pt.y < minY) minY = pt.y;
-            if (pt.y > maxY) maxY = pt.y;
-            sumX += pt.x; sumY += pt.y;
-            totalPts++;
-          });
-        });
-
+        strokesData.forEach(s => s.path.forEach(pt => {
+          if (pt.x < minX) minX = pt.x; if (pt.x > maxX) maxX = pt.x;
+          if (pt.y < minY) minY = pt.y; if (pt.y > maxY) maxY = pt.y;
+        }));
+        if (minX === Infinity) { minX=0; maxX=10; minY=0; maxY=10; } 
+        
         this.width = Math.max(20, maxX - minX);
         this.height = Math.max(20, maxY - minY);
         this.radius = Math.max(15, Math.hypot(this.width, this.height) / 2);
+        
+        const cx = minX + this.width/2;
+        const cy = minY + this.height/2;
 
-        const localCenterX = sumX / totalPts;
-        const localCenterY = sumY / totalPts;
-
-        this.normalizedStrokes = strokes.map(stroke => 
-          stroke.map(pt => ({ x: pt.x - localCenterX, y: pt.y - localCenterY }))
-        );
+        this.baseSpeed = 2.5 + Math.random() * 3.5;
+        const angle = Math.random() * Math.PI * 2;
+        this.vx = Math.cos(angle) * this.baseSpeed;
+        this.vy = Math.sin(angle) * this.baseSpeed;
 
         this.x = (Math.random() - 0.5) * (worldWidth * 0.7);
         this.y = (Math.random() - 0.5) * (worldHeight * 0.7);
-
-        const speed = 0.8 + Math.random() * 1.2;
-        const angle = Math.random() * Math.PI * 2;
-        this.vx = Math.cos(angle) * speed;
-        this.vy = Math.sin(angle) * speed;
-
-        this.strokeCount = strokes.length;
         this.phase = Math.random() * Math.PI * 2;
         this.mass = this.radius;
+
+        const pad = 20; 
+        this.cWidth = this.width + pad * 2;
+        this.cHeight = this.height + pad * 2;
+        this.cacheCanvas = document.createElement('canvas');
+        this.cacheCanvas.width = this.cWidth;
+        this.cacheCanvas.height = this.cHeight;
+        const ccCtx = this.cacheCanvas.getContext('2d');
+        ccCtx.lineCap = 'round'; ccCtx.lineJoin = 'round';
+
+        strokesData.forEach(s => {
+          const style = transformToOceanGlow(s.color);
+          const drawPath = (isInner) => {
+            ccCtx.beginPath();
+            ccCtx.strokeStyle = isInner ? style.inner : style.outer;
+            ccCtx.fillStyle = isInner ? style.inner : style.outer;
+            ccCtx.lineWidth = isInner ? Math.max(2, s.size - 3) : s.size + 4;
+            ccCtx.shadowBlur = isInner ? 0 : 15;
+            ccCtx.shadowColor = style.outer;
+            
+            if (s.path.length === 1) { 
+              const px = s.path[0].x - cx + this.cWidth/2;
+              const py = s.path[0].y - cy + this.cHeight/2;
+              ccCtx.arc(px, py, ccCtx.lineWidth/2, 0, Math.PI*2);
+              ccCtx.fill();
+            } else { 
+              s.path.forEach((pt, i) => {
+                const px = pt.x - cx + this.cWidth/2;
+                const py = pt.y - cy + this.cHeight/2;
+                if (i === 0) ccCtx.moveTo(px, py); else ccCtx.lineTo(px, py);
+              });
+              ccCtx.stroke();
+            }
+          };
+          drawPath(false); 
+          drawPath(true);  
+        });
       }
 
       update() {
-        this.x += this.vx;
-        this.y += this.vy;
-        this.phase += 0.03;
+        let targetFood = null;
+        let minDist = 400; 
+        foods.forEach(f => {
+          if (f.eaten) return;
+          const d = Math.hypot(f.x - this.x, f.y - this.y);
+          if (d < minDist) { minDist = d; targetFood = f; }
+        });
 
-        const halfW = worldWidth / 2;
-        const halfH = worldHeight / 2;
+        if (targetFood) {
+          const dx = targetFood.x - this.x;
+          const dy = targetFood.y - this.y;
+          const angle = Math.atan2(dy, dx);
+          this.vx = this.vx * 0.94 + Math.cos(angle) * 0.4;
+          this.vy = this.vy * 0.94 + Math.sin(angle) * 0.4;
+          
+          if (minDist < this.radius + targetFood.radius + 10) {
+            targetFood.eaten = true;
+            this.eatTimer = 1.0; 
+            sound.playEatSound();
+            createImpactSparks(targetFood.x, targetFood.y, '#fde047', 8);
+          }
+        } else {
+          const currentSpeed = Math.hypot(this.vx, this.vy);
+          if (currentSpeed > 0.1) {
+            this.vx = (this.vx / currentSpeed) * (currentSpeed * 0.98 + this.baseSpeed * 0.02);
+            this.vy = (this.vy / currentSpeed) * (currentSpeed * 0.98 + this.baseSpeed * 0.02);
+          }
+        }
 
+        this.x += this.vx; this.y += this.vy;
+        this.phase += 0.05;
+
+        const halfW = worldWidth / 2, halfH = worldHeight / 2;
         let hit = false;
         if (this.x - this.radius < -halfW) { this.x = -halfW + this.radius; this.vx *= -1; hit = true; }
         if (this.x + this.radius > halfW) { this.x = halfW - this.radius; this.vx *= -1; hit = true; }
@@ -548,328 +457,290 @@
 
         if (hit) {
           const now = Date.now();
-          if (now - this.lastSoundTime > 300) {
-            sound.playImpactSound(this.radius, this.rawColor, this.strokeCount);
+          if (now - this.lastSoundTime > 200) {
+            sound.playImpactSound(this.radius, this.rawColor);
             this.lastSoundTime = now;
           }
-          createImpactSparks(this.x, this.y, this.style.inner);
+          createImpactSparks(this.x, this.y, transformToOceanGlow(this.rawColor).inner);
         }
       }
 
       draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
+        ctx.rotate((this.vx * 0.03) + Math.sin(this.phase * 2) * 0.1);
 
-        const swimTilt = (this.vx * 0.05) + Math.sin(this.phase * 2) * 0.15;
-        ctx.rotate(swimTilt);
+        let eatScale = 1.0;
+        if (this.eatTimer > 0) {
+          eatScale = 1.0 + Math.sin(this.eatTimer * Math.PI) * 0.3;
+          this.eatTimer -= 0.05;
+        }
 
-        const swimPulse = Math.sin(this.phase * 3) * 0.08;
-        const scaleX = 1 + Math.sin(this.phase) * 0.05 + swimPulse;
-        const scaleY = 1 + Math.cos(this.phase) * 0.05 - swimPulse;
-        ctx.scale(scaleX, scaleY);
-
-        ctx.shadowColor = this.style.outer;
-        ctx.shadowBlur = 20;
-
-        this.normalizedStrokes.forEach(stroke => {
-          if (stroke.length < 2) return;
-          
-          ctx.beginPath();
-          ctx.strokeStyle = this.style.outer;
-          ctx.lineWidth = 8;
-          ctx.lineCap = 'round';
-          ctx.lineJoin = 'round';
-          ctx.moveTo(stroke[0].x, stroke[0].y);
-          for (let i = 1; i < stroke.length; i++) ctx.lineTo(stroke[i].x, stroke[i].y);
-          ctx.stroke();
-
-          ctx.beginPath();
-          ctx.strokeStyle = this.style.inner;
-          ctx.lineWidth = 3;
-          ctx.moveTo(stroke[0].x, stroke[0].y);
-          for (let i = 1; i < stroke.length; i++) ctx.lineTo(stroke[i].x, stroke[i].y);
-          ctx.stroke();
-        });
-
+        const swimPulse = Math.sin(this.phase * 3) * 0.05;
+        ctx.scale((1 + swimPulse) * eatScale, (1 - swimPulse) * eatScale);
+        
+        ctx.drawImage(this.cacheCanvas, -this.cWidth/2, -this.cHeight/2);
         ctx.restore();
       }
     }
 
-    // デフォルトの初期生き物アセット
-    function initDefaultCreatures() {
-      const jellyfishStrokes = [
-        [{x: 50, y: 50}, {x: 40, y: 30}, {x: 60, y: 20}, {x: 90, y: 20}, {x: 110, y: 30}, {x: 100, y: 50}, {x: 50, y: 50}],
-        [{x: 55, y: 50}, {x: 55, y: 80}],
-        [{x: 75, y: 50}, {x: 75, y: 85}],
-        [{x: 95, y: 50}, {x: 95, y: 80}]
-      ];
-      const fishStrokes = [
-        [{x: 40, y: 50}, {x: 70, y: 30}, {x: 110, y: 50}, {x: 70, y: 70}, {x: 40, y: 50}],
-        [{x: 110, y: 50}, {x: 130, y: 35}, {x: 130, y: 65}, {x: 110, y: 50}],
-        [{x: 80, y: 45}, {x: 80, y: 46}]
-      ];
-      const mantaStrokes = [
-        [{x: 30, y: 50}, {x: 70, y: 20}, {x: 110, y: 50}, {x: 70, y: 80}, {x: 30, y: 50}],
-        [{x: 30, y: 50}, {x: 10, y: 50}]
-      ];
-
-      creatures.push(new Creature(jellyfishStrokes, '#22d3ee'));
-      creatures.push(new Creature(fishStrokes, '#818cf8'));
-      creatures.push(new Creature(mantaStrokes, '#34d399'));
-      updateAquariumScale();
+    class Food {
+      constructor(x, y) {
+        this.x = x; this.y = y;
+        this.vy = 1.5 + Math.random() * 1.5;
+        this.radius = 5;
+        this.eaten = false;
+      }
+      update() {
+        this.y += this.vy;
+        if (this.y > worldHeight / 2 + 50) this.eaten = true;
+      }
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = '#fde047';
+        ctx.shadowColor = '#fde047';
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.restore();
+      }
     }
 
-    // --- 泡クラス ---
     class Bubble {
       constructor() {
-        this.radius = 6 + Math.random() * 16;
+        this.radius = 5 + Math.random() * 15;
         this.x = (Math.random() - 0.5) * (worldWidth * 0.9);
         this.y = worldHeight / 2 + this.radius + 20;
-        this.vy = - (0.8 + Math.random() * 1.5);
-        this.swingAmplitude = 0.5 + Math.random() * 1.5;
-        this.swingSpeed = 0.02 + Math.random() * 0.03;
+        this.vy = -(1.5 + Math.random() * 2.5);
         this.phase = Math.random() * Math.PI * 2;
         this.popped = false;
       }
-
       update() {
-        this.phase += this.swingSpeed;
-        this.x += Math.sin(this.phase) * this.swingAmplitude;
+        this.phase += 0.05;
+        this.x += Math.sin(this.phase) * 1.5;
         this.y += this.vy;
-
         if (this.y < -worldHeight / 2) this.pop();
       }
-
       pop() {
         if (this.popped) return;
         this.popped = true;
         sound.playBubblePopSound(this.radius);
-        createImpactSparks(this.x, this.y, '#67e8f9', 8);
+        createImpactSparks(this.x, this.y, '#67e8f9', 6);
       }
-
       draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-
-        const grad = ctx.createRadialGradient(-this.radius * 0.3, -this.radius * 0.3, 1, 0, 0, this.radius);
-        grad.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-        grad.addColorStop(0.4, 'rgba(165, 243, 252, 0.3)');
-        grad.addColorStop(1, 'rgba(34, 211, 238, 0.1)');
-
         ctx.beginPath();
-        ctx.fillStyle = grad;
-        ctx.strokeStyle = 'rgba(165, 243, 252, 0.6)';
-        ctx.lineWidth = 1.5;
-        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(165, 243, 252, 0.5)';
         ctx.stroke();
-
-        ctx.beginPath();
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-        ctx.arc(-this.radius * 0.4, -this.radius * 0.4, this.radius * 0.25, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.restore();
       }
     }
 
-    function createImpactSparks(x, y, color, count = 12) {
+    function createImpactSparks(x, y, color, count = 10) {
       for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = 1 + Math.random() * 4;
+        const angle = Math.random() * Math.PI * 2, speed = 1 + Math.random() * 5;
         particles.push({
-          x: x, y: y,
-          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-          color: color, life: 1.0, decay: 0.02 + Math.random() * 0.03, size: 2 + Math.random() * 3
+          x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+          color, life: 1.0, decay: 0.02 + Math.random() * 0.04, size: 2 + Math.random() * 3
         });
       }
     }
 
-    function spawnCreatureFromData(strokesData, colorData) {
-      if (!strokesData || strokesData.length === 0) return;
-      const newCreature = new Creature(strokesData, colorData);
-      creatures.push(newCreature);
-      updateAquariumScale();
-      sound.playImpactSound(newCreature.radius, colorData, newCreature.strokeCount);
-    }
-
-    document.getElementById('spawnBtn').addEventListener('click', () => {
-      if (currentStrokes.length === 0) return;
-
-      spawnCreatureFromData(currentStrokes, currentColor);
-
-      currentStrokes = [];
-      redrawUserCanvas();
-      document.getElementById('drawPlaceholder').style.display = 'flex';
-    });
-
-    function updateAquariumScale() {
-      creatureCountEl.textContent = creatures.length;
-      
-      targetCameraZoom = Math.max(0.15, 1.0 / (1 + Math.max(0, creatures.length - 3) * 0.2));
-      worldWidth = BASE_WORLD_WIDTH / targetCameraZoom;
-      worldHeight = BASE_WORLD_HEIGHT / targetCameraZoom;
-
-      zoomLevelEl.textContent = `${Math.round(targetCameraZoom * 100)}%`;
-    }
-
-    setInterval(() => {
-      if (bubbles.length < 25) bubbles.push(new Bubble());
-    }, 1200);
-
     function handleCollisions() {
       for (let i = 0; i < creatures.length; i++) {
         for (let j = i + 1; j < creatures.length; j++) {
-          const c1 = creatures[i];
-          const c2 = creatures[j];
-          const dx = c2.x - c1.x;
-          const dy = c2.y - c1.y;
+          const c1 = creatures[i], c2 = creatures[j];
+          const dx = c2.x - c1.x, dy = c2.y - c1.y;
           const dist = Math.hypot(dx, dy);
           const minDist = c1.radius + c2.radius;
-
           if (dist < minDist) {
             const overlap = minDist - dist;
-            const nx = dx / (dist || 1);
-            const ny = dy / (dist || 1);
-
-            c1.x -= nx * overlap * 0.51;
-            c1.y -= ny * overlap * 0.51;
-            c2.x += nx * overlap * 0.51;
-            c2.y += ny * overlap * 0.51;
-
-            const kx = c1.vx - c2.vx;
-            const ky = c1.vy - c2.vy;
+            const nx = dx / (dist || 1), ny = dy / (dist || 1);
+            c1.x -= nx * overlap * 0.5; c1.y -= ny * overlap * 0.5;
+            c2.x += nx * overlap * 0.5; c2.y += ny * overlap * 0.5;
+            const kx = c1.vx - c2.vx, ky = c1.vy - c2.vy;
             const p = 2 * (nx * kx + ny * ky) / (c1.mass + c2.mass);
-
-            c1.vx -= p * c2.mass * nx;
-            c1.vy -= p * c2.mass * ny;
-            c2.vx += p * c1.mass * nx;
-            c2.vy += p * c1.mass * ny;
-
+            c1.vx -= p * c2.mass * nx; c1.vy -= p * c2.mass * ny;
+            c2.vx += p * c1.mass * nx; c2.vy += p * c1.mass * ny;
             const now = Date.now();
-            if (now - c1.lastSoundTime > 300 && now - c2.lastSoundTime > 300) {
-              sound.playImpactSound((c1.radius + c2.radius) / 2, c1.rawColor, c1.strokeCount);
-              c1.lastSoundTime = now;
-              c2.lastSoundTime = now;
+            if (now - c1.lastSoundTime > 200) {
+              sound.playImpactSound((c1.radius + c2.radius)/2, c1.rawColor);
+              c1.lastSoundTime = c2.lastSoundTime = now;
             }
-            createImpactSparks((c1.x + c2.x) / 2, (c1.y + c2.y) / 2, c1.style.inner, 6);
-          }
-        }
-      }
-
-      for (let b of bubbles) {
-        for (let c of creatures) {
-          if (Math.hypot(b.x - c.x, b.y - c.y) < b.radius + c.radius) {
-            b.pop();
-            break;
           }
         }
       }
     }
 
-    // --- レンダリングループ ---
+    function resize() {
+      const w = window.innerWidth, h = window.innerHeight;
+      aquariumCanvas.width = w; aquariumCanvas.height = h;
+    }
+    window.addEventListener('resize', resize);
+
     function render() {
-      currentCameraZoom += (targetCameraZoom - currentCameraZoom) * 0.15;
-
-      ctx.save();
       ctx.clearRect(0, 0, aquariumCanvas.width, aquariumCanvas.height);
-
-      const w = aquariumCanvas.width;
-      const h = aquariumCanvas.height;
-
+      const w = aquariumCanvas.width, h = aquariumCanvas.height;
+      
       const bgGrad = ctx.createLinearGradient(0, 0, 0, h);
-      bgGrad.addColorStop(0, '#06152d');
-      bgGrad.addColorStop(0.4, '#030e20');
-      bgGrad.addColorStop(1, '#020611');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, w, h);
+      bgGrad.addColorStop(0, '#06152d'); bgGrad.addColorStop(1, '#020611');
+      ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, w, h);
 
-      ctx.save();
-      ctx.globalCompositeOperation = 'screen';
-      const rayGrad = ctx.createRadialGradient(w / 2, -100, 50, w / 2, h * 0.8, w * 0.8);
-      rayGrad.addColorStop(0, 'rgba(56, 189, 248, 0.25)');
-      rayGrad.addColorStop(0.5, 'rgba(20, 184, 166, 0.08)');
-      rayGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = rayGrad;
-      ctx.fillRect(0, 0, w, h);
-      ctx.restore();
+      // --- 生き物の数に応じた自動ズームアウト（2匹目からすぐに引くように設定） ---
+      let targetZoom = 1.0;
+      if (creatures.length > 1) {
+        targetZoom = Math.max(0.3, 1.0 - (creatures.length - 1) * 0.1);
+      }
+      
+      currentCameraZoom += (targetZoom - currentCameraZoom) * 0.05;
+
+      worldWidth = BASE_WORLD_WIDTH / currentCameraZoom;
+      worldHeight = BASE_WORLD_HEIGHT / currentCameraZoom;
 
       ctx.save();
       ctx.translate(w / 2, h / 2);
-
-      const viewScale = (w / BASE_WORLD_WIDTH) * currentCameraZoom;
+      
+      const viewScale = Math.min(w / BASE_WORLD_WIDTH, h / BASE_WORLD_HEIGHT) * currentCameraZoom;
       ctx.scale(viewScale, viewScale);
-
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
-      ctx.lineWidth = 3;
-      ctx.strokeRect(-worldWidth / 2, -worldHeight / 2, worldWidth, worldHeight);
 
       handleCollisions();
 
-      for (let i = bubbles.length - 1; i >= 0; i--) {
-        const b = bubbles[i];
-        b.update();
-        b.draw(ctx);
-        if (b.popped) bubbles.splice(i, 1);
+      for (let i = foods.length - 1; i >= 0; i--) {
+        foods[i].update();
+        if (foods[i].eaten) {
+          foods.splice(i, 1);
+        } else {
+          foods[i].draw(ctx);
+        }
       }
-      bubbleCountEl.textContent = bubbles.length;
 
-      creatures.forEach(c => {
-        c.update();
-        c.draw(ctx);
-      });
+      creatures.forEach(c => { c.update(); c.draw(ctx); });
+
+      for (let i = bubbles.length - 1; i >= 0; i--) {
+        bubbles[i].update();
+        if (bubbles[i].popped) {
+          bubbles.splice(i, 1);
+        } else {
+          bubbles[i].draw(ctx);
+        }
+      }
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
         p.x += p.vx; p.y += p.vy; p.life -= p.decay;
         if (p.life <= 0) { particles.splice(i, 1); continue; }
-
-        ctx.save();
-        ctx.globalAlpha = p.life;
-        ctx.fillStyle = p.color;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
+        ctx.globalAlpha = p.life; ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
       }
+      ctx.globalAlpha = 1.0;
+      ctx.restore();
 
-      ctx.restore();
-      ctx.restore();
+      document.getElementById('creatureCount').textContent = creatures.length;
+      document.getElementById('bubbleCount').textContent = bubbles.length;
 
       requestAnimationFrame(render);
     }
 
-    // --- 音声有効化＆モーダル解除の確実な処理 ---
-    const modal = document.getElementById('audioStartModal');
-    const startBtn = document.getElementById('startAudioBtn');
+    setInterval(() => { if (bubbles.length < 20) bubbles.push(new Bubble()); }, 1500);
 
-    function dismissModal(e) {
-      if (e) e.preventDefault();
-      sound.init();
-      modal.remove();
-    }
-
-    startBtn.addEventListener('click', dismissModal);
-    startBtn.addEventListener('touchend', dismissModal);
-    modal.addEventListener('click', dismissModal);
-
-    const scaleBtns = { 'scalePentatonic': 'pentatonic', 'scaleLydian': 'lydian', 'scaleOkinawa': 'okinawa' };
-    Object.keys(scaleBtns).forEach(id => {
-      document.getElementById(id).addEventListener('click', (e) => {
-        Object.keys(scaleBtns).forEach(bId => {
-          document.getElementById(bId).className = "flex-1 md:flex-none px-2.5 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs bg-slate-800/60 border border-slate-700 text-slate-400 font-medium hover:bg-slate-700/50";
-        });
-        e.target.className = "flex-1 md:flex-none px-2.5 py-1 md:py-1.5 rounded-lg text-[10px] md:text-xs bg-cyan-500/30 border border-cyan-400 text-cyan-100 font-medium";
-        sound.setScale(scaleBtns[id]);
-      });
+    document.getElementById('startAudioBtn').addEventListener('click', (e) => {
+      sound.init(); document.getElementById('audioStartModal').remove();
+      resize(); initDrawCanvas();
+      creatures.push(new Creature([{ path: [{x:40,y:50},{x:70,y:30},{x:110,y:50},{x:70,y:70},{x:40,y:50}], color: '#818cf8', size: 6 }]));
+      requestAnimationFrame(render);
     });
 
-    window.addEventListener('load', () => {
-      resize();
-      initDrawCanvas();
-      initDefaultCreatures();
-      requestAnimationFrame(render);
+    const paletteModal = document.getElementById('paletteModal');
+    document.getElementById('openPaletteFab').addEventListener('click', () => {
+      paletteModal.classList.remove('hidden');
+      setTimeout(() => {
+        paletteModal.classList.remove('opacity-0', 'scale-95');
+        const rect = drawCanvas.parentElement.getBoundingClientRect();
+        drawCanvas.width = rect.width; drawCanvas.height = rect.height;
+        redrawUserCanvas();
+      }, 10);
+    });
+    
+    document.getElementById('closePaletteBtn').addEventListener('click', () => {
+      paletteModal.classList.add('opacity-0', 'scale-95');
+      setTimeout(() => paletteModal.classList.add('hidden'), 300);
+    });
+
+    document.getElementById('clearDrawBtn').addEventListener('click', () => {
+      currentStrokes = []; redrawUserCanvas();
+      document.getElementById('drawPlaceholder').style.display = 'flex';
+    });
+    
+    document.querySelectorAll('.color-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('border-white', 'scale-110'));
+        e.target.classList.add('border-white', 'scale-110');
+        currentColor = e.target.dataset.color;
+      });
+    });
+    
+    document.querySelectorAll('.size-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const target = e.target.closest('.size-btn');
+        document.querySelectorAll('.size-btn span').forEach(ind => {
+          ind.classList.remove('bg-white', 'shadow-[0_0_5px_#22d3ee]');
+          ind.classList.add('bg-slate-500');
+        });
+        const ind = target.querySelector('span');
+        ind.classList.remove('bg-slate-500');
+        ind.classList.add('bg-white', 'shadow-[0_0_5px_#22d3ee]');
+        currentBrushSize = parseInt(target.dataset.size);
+      });
+    });
+    
+    document.getElementById('spawnBtn').addEventListener('click', () => {
+      if (currentStrokes.length > 0) {
+        creatures.push(new Creature(currentStrokes));
+        sound.playImpactSound(30, currentStrokes[0].color);
+        currentStrokes = []; redrawUserCanvas();
+        document.getElementById('drawPlaceholder').style.display = 'flex';
+        document.getElementById('closePaletteBtn').click();
+      }
+    });
+
+    const envBody = document.getElementById('envControlsBody');
+    const toggleEnvBtn = document.getElementById('toggleEnvBtn');
+    let isEnvOpen = true;
+    toggleEnvBtn.addEventListener('click', () => {
+      isEnvOpen = !isEnvOpen;
+      envBody.style.display = isEnvOpen ? 'flex' : 'none';
+      toggleEnvBtn.querySelector('i.fa-chevron-down, i.fa-chevron-up').className = isEnvOpen ? 'fa-solid fa-chevron-down w-6 h-6 flex items-center justify-center bg-cyan-500/20 rounded-md' : 'fa-solid fa-chevron-up w-6 h-6 flex items-center justify-center bg-cyan-500/20 rounded-md';
+    });
+
+    document.getElementById('addBubbleBtn').addEventListener('click', () => {
+      for(let i = 0; i < 5; i++) bubbles.push(new Bubble());
+    });
+    
+    document.getElementById('addFoodBtn').addEventListener('click', () => {
+      for(let i = 0; i < 4; i++) {
+        const fx = (Math.random() - 0.5) * (worldWidth * 0.8);
+        const fy = -worldHeight / 2 - Math.random() * 100;
+        foods.push(new Food(fx, fy));
+      }
+    });
+
+    const scalePentaBtn = document.getElementById('scalePentatonic');
+    const scaleLydianBtn = document.getElementById('scaleLydian');
+
+    scalePentaBtn.addEventListener('click', () => {
+      sound.setScale('pentatonic');
+      scalePentaBtn.className = "flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-cyan-500/30 border border-cyan-400 text-cyan-100 font-medium";
+      scaleLydianBtn.className = "flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-slate-800/60 border border-slate-700 text-slate-400 font-medium";
+    });
+
+    scaleLydianBtn.addEventListener('click', () => {
+      sound.setScale('lydian');
+      scaleLydianBtn.className = "flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-cyan-500/30 border border-cyan-400 text-cyan-100 font-medium";
+      scalePentaBtn.className = "flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-slate-800/60 border border-slate-700 text-slate-400 font-medium";
     });
   </script>
 </body>
 </html>
+
+```
