@@ -69,26 +69,20 @@
     </div>
   </header>
 
-  <!-- UI: 環境コントロールパネル (最小化可能) -->
-  <div id="envControlsPanel" class="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-30 glass-panel p-3 md:p-4 rounded-2xl w-56 md:w-64 flex flex-col gap-2 transition-all duration-300">
-    <div class="flex justify-between items-center text-[10px] md:text-xs text-cyan-300 font-bold cursor-pointer" id="toggleEnvBtn">
-      <span class="flex items-center gap-1.5"><i class="fa-solid fa-sliders"></i> 環境コントロール</span>
-      <i class="fa-solid fa-chevron-down w-6 h-6 flex items-center justify-center bg-cyan-500/20 rounded-md"></i>
+  <!-- UI: 環境コントロールパネル (最小化可能・子ども向け大型UI) -->
+  <div id="envControlsPanel" class="absolute bottom-4 left-4 md:bottom-8 md:left-8 z-30 glass-panel p-4 rounded-3xl w-64 md:w-72 flex flex-col gap-2 transition-all duration-300 shadow-lg">
+    <div class="flex justify-between items-center text-sm md:text-base text-cyan-300 font-bold cursor-pointer" id="toggleEnvBtn">
+      <span class="flex items-center gap-2" id="envTitle"><i class="fa-solid fa-gamepad"></i> あそぶ</span>
+      <i class="fa-solid fa-chevron-down w-8 h-8 flex items-center justify-center bg-cyan-500/20 rounded-lg transition-transform" id="envToggleIcon"></i>
     </div>
-    <div id="envControlsBody" class="flex flex-col gap-3 mt-1">
-      <div class="flex gap-1.5">
-        <button id="scalePentatonic" class="flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-cyan-500/30 border border-cyan-400 text-cyan-100 font-medium">ペンタトニック</button>
-        <button id="scaleLydian" class="flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-slate-800/60 border border-slate-700 text-slate-400 font-medium">リディアン</button>
-      </div>
-      <hr class="border-cyan-500/20">
-      <div class="flex gap-2">
-        <button id="addBubbleBtn" class="flex-1 py-1.5 bg-slate-800/80 hover:bg-cyan-500/40 text-cyan-200 rounded-lg text-[10px] border border-cyan-500/30 transition-colors">
-          <i class="fa-solid fa-soap mr-1"></i>泡を増やす
-        </button>
-        <button id="addFoodBtn" class="flex-1 py-1.5 bg-slate-800/80 hover:bg-amber-400/40 text-amber-200 rounded-lg text-[10px] border border-amber-500/30 transition-colors">
-          <i class="fa-solid fa-cookie-bite mr-1"></i>餌をまく
-        </button>
-      </div>
+    <div id="envControlsBody" class="flex flex-col gap-3 mt-2">
+      <!-- 大型化されたアクションボタン -->
+      <button id="addBubbleBtn" class="w-full py-4 bg-slate-800/80 hover:bg-cyan-500/40 text-cyan-100 rounded-2xl text-lg font-bold border-2 border-cyan-500/40 shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
+        <i class="fa-solid fa-soap text-2xl text-cyan-400"></i> あわをだす
+      </button>
+      <button id="addFoodBtn" class="w-full py-4 bg-slate-800/80 hover:bg-amber-400/40 text-amber-100 rounded-2xl text-lg font-bold border-2 border-amber-500/40 shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
+        <i class="fa-solid fa-cookie-bite text-2xl text-amber-400"></i> えさをあげる
+      </button>
     </div>
   </div>
 
@@ -164,6 +158,7 @@
       constructor() {
         this.ctx = null;
         this.masterGain = null;
+        // ペンタトニックスケールで固定
         this.scale = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
         this.initialized = false;
       }
@@ -185,10 +180,6 @@
         convolver.connect(this.ctx.destination);
         this.masterGain.connect(this.ctx.destination);
         this.initialized = true;
-      }
-      setScale(type) {
-        if (type === 'pentatonic') this.scale = [130.81, 146.83, 164.81, 196.00, 220.00, 261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
-        else if (type === 'lydian') this.scale = [130.81, 146.83, 164.81, 185.00, 196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 369.99, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25];
       }
       playImpactSound(size, colorHex) {
         if (!this.initialized || !this.ctx) return;
@@ -247,7 +238,7 @@
     const BASE_WORLD_WIDTH = 1920, BASE_WORLD_HEIGHT = 1080;
     let currentCameraZoom = 1.0;
 
-    // --- お絵かき関連（多色・ストローク対応） ---
+    // --- お絵かき関連 ---
     let currentStrokes = [];
     let currentPath = [];
     let isDrawing = false;
@@ -358,7 +349,6 @@
         let rawWidth = Math.max(20, maxX - minX);
         let rawHeight = Math.max(20, maxY - minY);
         
-        // ★修正点1：最大サイズをさらに小さく（90px）して縮小率をアップ
         const MAX_SIZE = 90;
         const scale = Math.min(1.0, MAX_SIZE / Math.max(rawWidth, rawHeight));
         
@@ -535,17 +525,14 @@
         createImpactSparks(this.x, this.y, '#67e8f9', 6);
       }
       
-      // ★修正点2：泡の存在感をアップ（発光と塗りつぶしを追加）
       draw(ctx) {
         ctx.save();
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
         
-        // 淡い塗りつぶし
         ctx.fillStyle = 'rgba(165, 243, 252, 0.15)';
         ctx.fill();
         
-        // はっきりした輪郭と発光
         ctx.lineWidth = 2;
         ctx.strokeStyle = 'rgba(165, 243, 252, 0.8)';
         ctx.shadowColor = '#67e8f9';
@@ -666,14 +653,9 @@
       sound.init(); document.getElementById('audioStartModal').remove();
       resize(); initDrawCanvas();
       
-      // ★修正点3：初期の生き物を「魚3匹＋クラゲ1匹」に増加
-      // 青い魚
       creatures.push(new Creature([{ path: [{x:40,y:50},{x:70,y:30},{x:110,y:50},{x:70,y:70},{x:40,y:50}], color: '#818cf8', size: 6 }]));
-      // 小さな緑の魚
       creatures.push(new Creature([{ path: [{x:10,y:20},{x:30,y:10},{x:50,y:20},{x:30,y:30},{x:10,y:20}], color: '#34d399', size: 4 }]));
-      // 黄色い魚
       creatures.push(new Creature([{ path: [{x:30,y:40},{x:60,y:20},{x:90,y:40},{x:110,y:60},{x:60,y:60},{x:30,y:40}], color: '#fcd34d', size: 8 }]));
-      // 紫のクラゲ風
       creatures.push(new Creature([
         { path: [{x:50,y:30},{x:70,y:20},{x:90,y:30},{x:90,y:50},{x:50,y:50},{x:50,y:30}], color: '#c084fc', size: 6 },
         { path: [{x:60,y:50},{x:60,y:80}], color: '#c084fc', size: 4 },
@@ -737,13 +719,29 @@
       }
     });
 
-    const envBody = document.getElementById('envControlsBody');
+    // --- パネル最小化・最大化のロジック ---
+    const envPanel = document.getElementById('envControlsPanel');
     const toggleEnvBtn = document.getElementById('toggleEnvBtn');
+    const envBody = document.getElementById('envControlsBody');
+    const envTitle = document.getElementById('envTitle');
+    const envToggleIcon = document.getElementById('envToggleIcon');
     let isEnvOpen = true;
+
     toggleEnvBtn.addEventListener('click', () => {
       isEnvOpen = !isEnvOpen;
       envBody.style.display = isEnvOpen ? 'flex' : 'none';
-      toggleEnvBtn.querySelector('i.fa-chevron-down, i.fa-chevron-up').className = isEnvOpen ? 'fa-solid fa-chevron-down w-6 h-6 flex items-center justify-center bg-cyan-500/20 rounded-md' : 'fa-solid fa-chevron-up w-6 h-6 flex items-center justify-center bg-cyan-500/20 rounded-md';
+      
+      if (isEnvOpen) {
+        // パネルを開いた時の状態（通常の大きなUI）
+        envPanel.className = "absolute bottom-4 left-4 md:bottom-8 md:left-8 z-30 glass-panel p-4 rounded-3xl w-64 md:w-72 flex flex-col gap-2 transition-all duration-300 shadow-lg";
+        envTitle.style.display = 'flex';
+        envToggleIcon.className = "fa-solid fa-chevron-down w-8 h-8 flex items-center justify-center bg-cyan-500/20 rounded-lg transition-transform";
+      } else {
+        // パネルを閉じた時の状態（邪魔にならない小さなアイコンボタン）
+        envPanel.className = "absolute bottom-4 left-4 md:bottom-8 md:left-8 z-30 glass-panel p-3 rounded-2xl w-auto flex flex-col gap-2 transition-all duration-300 opacity-60 hover:opacity-100 shadow-none";
+        envTitle.style.display = 'none';
+        envToggleIcon.className = "fa-solid fa-gamepad w-10 h-10 flex items-center justify-center bg-cyan-500/20 rounded-xl text-xl text-cyan-300 transition-transform";
+      }
     });
 
     document.getElementById('addBubbleBtn').addEventListener('click', () => {
@@ -756,21 +754,6 @@
         const fy = -worldHeight / 2 - Math.random() * 100;
         foods.push(new Food(fx, fy));
       }
-    });
-
-    const scalePentaBtn = document.getElementById('scalePentatonic');
-    const scaleLydianBtn = document.getElementById('scaleLydian');
-
-    scalePentaBtn.addEventListener('click', () => {
-      sound.setScale('pentatonic');
-      scalePentaBtn.className = "flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-cyan-500/30 border border-cyan-400 text-cyan-100 font-medium";
-      scaleLydianBtn.className = "flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-slate-800/60 border border-slate-700 text-slate-400 font-medium";
-    });
-
-    scaleLydianBtn.addEventListener('click', () => {
-      sound.setScale('lydian');
-      scaleLydianBtn.className = "flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-cyan-500/30 border border-cyan-400 text-cyan-100 font-medium";
-      scalePentaBtn.className = "flex-1 px-2 py-1.5 rounded-lg text-[10px] bg-slate-800/60 border border-slate-700 text-slate-400 font-medium";
     });
   </script>
 </body>
