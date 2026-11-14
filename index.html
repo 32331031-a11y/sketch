@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <!-- ★iPad Safariでホーム画面に追加した際にフルスクリーン(ツールバー非表示)にする設定 -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="深海音響水槽">
+  
   <title>画音共鳴 - 深海音響水槽</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
@@ -14,8 +19,8 @@
       height: 100dvh;
       margin: 0;
       padding: 0;
-      touch-action: none;
-      -webkit-touch-callout: none;
+      touch-action: none; /* ★OS標準のズームやスクロールを無効化 */
+      -webkit-touch-callout: none; /* 長押しメニュー無効化 */
       -webkit-user-select: none;
       user-select: none;
       overflow: hidden;
@@ -120,7 +125,7 @@
     <!-- ツールバー (色・太さ・放流) -->
     <div class="p-3 md:p-5 flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-900/60 rounded-b-3xl border-t border-cyan-500/20">
       
-      <!-- ★拡充されたカラーパレット (16色) -->
+      <!-- 拡充されたカラーパレット (16色) -->
       <div class="flex flex-wrap justify-center items-center gap-2 bg-slate-800/80 p-2 rounded-xl border border-slate-700 w-full md:w-auto">
         <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-cyan-400 border-2 border-white scale-110 shadow-sm" data-color="#22d3ee"></button>
         <button class="color-btn w-6 h-6 md:w-8 md:h-8 rounded-full bg-blue-400 border-2 border-transparent shadow-sm" data-color="#60a5fa"></button>
@@ -162,6 +167,27 @@
   </div>
 
   <script>
+    // ★追加: iPad Safariのピンチズーム・ダブルタップズームをJavaScriptレイヤーで強制ブロック
+    document.addEventListener('touchstart', function(event) {
+      if (event.touches.length > 1) {
+        event.preventDefault(); // ピンチズーム無効化
+      }
+    }, { passive: false });
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+      const now = (new Date()).getTime();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault(); // ダブルタップズーム無効化
+      }
+      lastTouchEnd = now;
+    }, { passive: false });
+    
+    // ★追加: ダブルクリックの無効化（念のためPCマウス操作時用）
+    document.addEventListener('dblclick', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
     // --- 音響エンジン (Web Audio API) ---
     class SoundEngine {
       constructor() {
@@ -253,25 +279,24 @@
     let currentColor = '#22d3ee';
     let currentBrushSize = 8;
 
-    // ★追加されたカラーマップデータ (16色分対応)
     function transformToOceanGlow(hexColor) {
       const map = {
-        '#22d3ee': { inner: '#67e8f9', outer: 'rgba(34, 211, 238, 0.8)' },   // cyan
-        '#60a5fa': { inner: '#93c5fd', outer: 'rgba(96, 165, 250, 0.8)' },   // blue
-        '#818cf8': { inner: '#a5b4fc', outer: 'rgba(129, 140, 248, 0.8)' },   // indigo
-        '#c084fc': { inner: '#e9d5ff', outer: 'rgba(192, 132, 252, 0.8)' },   // purple
-        '#e879f9': { inner: '#f0abfc', outer: 'rgba(232, 121, 249, 0.8)' },   // fuchsia
-        '#f472b6': { inner: '#f9a8d4', outer: 'rgba(244, 114, 182, 0.8)' },   // pink
-        '#fb7185': { inner: '#fecdd3', outer: 'rgba(251, 113, 133, 0.8)' },   // rose
-        '#f87171': { inner: '#fca5a5', outer: 'rgba(248, 113, 113, 0.8)' },   // red
-        '#fb923c': { inner: '#fdba74', outer: 'rgba(251, 146, 60, 0.8)' },    // orange
-        '#fcd34d': { inner: '#fef3c7', outer: 'rgba(252, 211, 77, 0.8)' },    // amber
-        '#fde047': { inner: '#fef08a', outer: 'rgba(253, 224, 71, 0.8)' },    // yellow
-        '#a3e635': { inner: '#bef264', outer: 'rgba(163, 230, 53, 0.8)' },    // lime
-        '#4ade80': { inner: '#86efac', outer: 'rgba(74, 222, 128, 0.8)' },    // green
-        '#34d399': { inner: '#6ee7b7', outer: 'rgba(52, 211, 153, 0.8)' },    // emerald
-        '#2dd4bf': { inner: '#5eead4', outer: 'rgba(45, 212, 191, 0.8)' },    // teal
-        '#ffffff': { inner: '#ffffff', outer: 'rgba(255, 255, 255, 0.8)' }    // white
+        '#22d3ee': { inner: '#67e8f9', outer: 'rgba(34, 211, 238, 0.8)' },
+        '#60a5fa': { inner: '#93c5fd', outer: 'rgba(96, 165, 250, 0.8)' },
+        '#818cf8': { inner: '#a5b4fc', outer: 'rgba(129, 140, 248, 0.8)' },
+        '#c084fc': { inner: '#e9d5ff', outer: 'rgba(192, 132, 252, 0.8)' },
+        '#e879f9': { inner: '#f0abfc', outer: 'rgba(232, 121, 249, 0.8)' },
+        '#f472b6': { inner: '#f9a8d4', outer: 'rgba(244, 114, 182, 0.8)' },
+        '#fb7185': { inner: '#fecdd3', outer: 'rgba(251, 113, 133, 0.8)' },
+        '#f87171': { inner: '#fca5a5', outer: 'rgba(248, 113, 113, 0.8)' },
+        '#fb923c': { inner: '#fdba74', outer: 'rgba(251, 146, 60, 0.8)' },
+        '#fcd34d': { inner: '#fef3c7', outer: 'rgba(252, 211, 77, 0.8)' },
+        '#fde047': { inner: '#fef08a', outer: 'rgba(253, 224, 71, 0.8)' },
+        '#a3e635': { inner: '#bef264', outer: 'rgba(163, 230, 53, 0.8)' },
+        '#4ade80': { inner: '#86efac', outer: 'rgba(74, 222, 128, 0.8)' },
+        '#34d399': { inner: '#6ee7b7', outer: 'rgba(52, 211, 153, 0.8)' },
+        '#2dd4bf': { inner: '#5eead4', outer: 'rgba(45, 212, 191, 0.8)' },
+        '#ffffff': { inner: '#ffffff', outer: 'rgba(255, 255, 255, 0.8)' }
       };
       return map[hexColor] || { inner: '#ffffff', outer: `rgba(255,255,255,0.8)` };
     }
@@ -576,7 +601,6 @@
         for (let j = i + 1; j < creatures.length; j++) {
           const c1 = creatures[i], c2 = creatures[j];
           
-          // ★軽量化処理: 明らかに遠い場合は、重たい距離計算(Math.hypot)をスキップ
           if (Math.abs(c1.x - c2.x) > c1.radius + c2.radius) continue;
           if (Math.abs(c1.y - c2.y) > c1.radius + c2.radius) continue;
 
@@ -742,7 +766,6 @@
       }
     });
 
-    // --- パネル最小化・最大化のロジック ---
     const envPanel = document.getElementById('envControlsPanel');
     const toggleEnvBtn = document.getElementById('toggleEnvBtn');
     const envBody = document.getElementById('envControlsBody');
