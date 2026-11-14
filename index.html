@@ -248,7 +248,7 @@
     let currentCameraZoom = 1.0;
 
     // --- お絵かき関連（多色・ストローク対応） ---
-    let currentStrokes = []; // 構造: { path: [{x,y}...], color: '#...', size: 8 }
+    let currentStrokes = [];
     let currentPath = [];
     let isDrawing = false;
     let currentColor = '#22d3ee';
@@ -348,6 +348,7 @@
         this.lastSoundTime = 0;
         this.eatTimer = 0; 
 
+        // 元々の描画のバウンディングボックスを計算
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         strokesData.forEach(s => s.path.forEach(pt => {
           if (pt.x < minX) minX = pt.x; if (pt.x > maxX) maxX = pt.x;
@@ -355,12 +356,23 @@
         }));
         if (minX === Infinity) { minX=0; maxX=10; minY=0; maxY=10; } 
         
-        this.width = Math.max(20, maxX - minX);
-        this.height = Math.max(20, maxY - minY);
+        // --- 修正箇所：描かれた絵がデカすぎるときに自動でスケールダウンする ---
+        let rawWidth = Math.max(20, maxX - minX);
+        let rawHeight = Math.max(20, maxY - minY);
+        
+        // 最大サイズを 150px 程度に制限
+        const MAX_SIZE = 150;
+        const scale = Math.min(1.0, MAX_SIZE / Math.max(rawWidth, rawHeight));
+        
+        // 実際の水槽内でのサイズにスケールを適用
+        this.width = rawWidth * scale;
+        this.height = rawHeight * scale;
         this.radius = Math.max(15, Math.hypot(this.width, this.height) / 2);
         
-        const cx = minX + this.width/2;
-        const cy = minY + this.height/2;
+        // 描画の中心座標（元の座標系）
+        const cx = minX + rawWidth/2;
+        const cy = minY + rawHeight/2;
+        // -----------------------------------------------------------------
 
         this.baseSpeed = 2.5 + Math.random() * 3.5;
         const angle = Math.random() * Math.PI * 2;
@@ -387,19 +399,23 @@
             ccCtx.beginPath();
             ccCtx.strokeStyle = isInner ? style.inner : style.outer;
             ccCtx.fillStyle = isInner ? style.inner : style.outer;
-            ccCtx.lineWidth = isInner ? Math.max(2, s.size - 3) : s.size + 4;
+            
+            // ペンの太さもスケールに合わせて少し細く調整（細くなりすぎないように制限）
+            let scaledSize = s.size * scale;
+            ccCtx.lineWidth = isInner ? Math.max(2, scaledSize - 3) : Math.max(4, scaledSize + 4);
+            
             ccCtx.shadowBlur = isInner ? 0 : 15;
             ccCtx.shadowColor = style.outer;
             
             if (s.path.length === 1) { 
-              const px = s.path[0].x - cx + this.cWidth/2;
-              const py = s.path[0].y - cy + this.cHeight/2;
+              const px = (s.path[0].x - cx) * scale + this.cWidth/2;
+              const py = (s.path[0].y - cy) * scale + this.cHeight/2;
               ccCtx.arc(px, py, ccCtx.lineWidth/2, 0, Math.PI*2);
               ccCtx.fill();
             } else { 
               s.path.forEach((pt, i) => {
-                const px = pt.x - cx + this.cWidth/2;
-                const py = pt.y - cy + this.cHeight/2;
+                const px = (pt.x - cx) * scale + this.cWidth/2;
+                const py = (pt.y - cy) * scale + this.cHeight/2;
                 if (i === 0) ccCtx.moveTo(px, py); else ccCtx.lineTo(px, py);
               });
               ccCtx.stroke();
