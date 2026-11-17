@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <!-- ★iPad Safariでホーム画面に追加した際にフルスクリーン(ツールバー非表示)にする設定 -->
+  <!-- iPad Safariでホーム画面に追加した際にフルスクリーン(ツールバー非表示)にする設定 -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="深海音響水槽">
@@ -19,8 +19,8 @@
       height: 100dvh;
       margin: 0;
       padding: 0;
-      touch-action: none; /* ★OS標準のズームやスクロールを無効化 */
-      -webkit-touch-callout: none; /* 長押しメニュー無効化 */
+      touch-action: none;
+      -webkit-touch-callout: none;
       -webkit-user-select: none;
       user-select: none;
       overflow: hidden;
@@ -167,10 +167,10 @@
   </div>
 
   <script>
-    // ★追加: iPad Safariのピンチズーム・ダブルタップズームをJavaScriptレイヤーで強制ブロック
+    // iPad Safariのピンチズーム・ダブルタップズームを強制ブロック
     document.addEventListener('touchstart', function(event) {
       if (event.touches.length > 1) {
-        event.preventDefault(); // ピンチズーム無効化
+        event.preventDefault();
       }
     }, { passive: false });
 
@@ -178,12 +178,11 @@
     document.addEventListener('touchend', function(event) {
       const now = (new Date()).getTime();
       if (now - lastTouchEnd <= 300) {
-        event.preventDefault(); // ダブルタップズーム無効化
+        event.preventDefault();
       }
       lastTouchEnd = now;
     }, { passive: false });
     
-    // ★追加: ダブルクリックの無効化（念のためPCマウス操作時用）
     document.addEventListener('dblclick', function(e) {
       e.preventDefault();
     }, { passive: false });
@@ -412,6 +411,11 @@
         this.phase = Math.random() * Math.PI * 2;
         this.mass = this.radius;
 
+        // 成長ギミック用の基準値と成長倍率
+        this.baseRadius = this.radius;
+        this.baseMass = this.mass;
+        this.growthScale = 1.0;
+
         const pad = 20; 
         this.cWidth = this.width + pad * 2;
         this.cHeight = this.height + pad * 2;
@@ -455,7 +459,7 @@
 
       update() {
         let targetFood = null;
-        let minDist = 400; 
+        let minDist = 400 + this.radius; 
         foods.forEach(f => {
           if (f.eaten) return;
           const d = Math.hypot(f.x - this.x, f.y - this.y);
@@ -472,6 +476,12 @@
           if (minDist < this.radius + targetFood.radius + 10) {
             targetFood.eaten = true;
             this.eatTimer = 1.0; 
+
+            // ★修正: 大きさの上限をなくし、餌を食べるたびに成長し続ける
+            this.growthScale += 0.04;
+            this.radius = this.baseRadius * this.growthScale;
+            this.mass = this.baseMass * this.growthScale;
+
             sound.playEatSound();
             createImpactSparks(targetFood.x, targetFood.y, '#fde047', 8);
           }
@@ -515,7 +525,8 @@
         }
 
         const swimPulse = Math.sin(this.phase * 3) * 0.05;
-        ctx.scale((1 + swimPulse) * eatScale, (1 - swimPulse) * eatScale);
+        const totalScale = eatScale * this.growthScale;
+        ctx.scale((1 + swimPulse) * totalScale, (1 - swimPulse) * totalScale);
         
         ctx.drawImage(this.cacheCanvas, -this.cWidth/2, -this.cHeight/2);
         ctx.restore();
@@ -640,10 +651,20 @@
       bgGrad.addColorStop(0, '#06152d'); bgGrad.addColorStop(1, '#020611');
       ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, w, h);
 
-      let targetZoom = 1.0;
-      if (creatures.length > 5) {
-        targetZoom = Math.max(0.6, 1.0 - (creatures.length - 5) * 0.02);
-      }
+      // ★修正: 生き物の数に加えて「成長した分（大きさの増加）」に応じて画面全体をズームアウト
+      let totalGrowth = 0;
+      let maxRadius = 0;
+      creatures.forEach(c => {
+        totalGrowth += Math.max(0, c.growthScale - 1.0);
+        if (c.radius > maxRadius) maxRadius = c.radius;
+      });
+
+      const countZoom = creatures.length > 5 ? 1.0 - (creatures.length - 5) * 0.02 : 1.0;
+      const growthZoom = 1.0 / (1.0 + totalGrowth * 0.15);
+      // 巨大化した生き物が水槽の壁に挟まらないよう、最大サイズに合わせて水槽の広さを確保
+      const sizeSafetyZoom = maxRadius > 0 ? (BASE_WORLD_HEIGHT * 0.5) / (maxRadius * 2.8) : 1.0;
+
+      const targetZoom = Math.max(0.15, Math.min(1.0, countZoom, growthZoom, sizeSafetyZoom));
       
       currentCameraZoom += (targetZoom - currentCameraZoom) * 0.05;
 
